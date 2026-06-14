@@ -4,11 +4,90 @@ let targetPlayer = null;
 let guessesRemaining = 5;
 const totalGuessesAllowed = 5;
 let baseDifficultyPoints = 1000;
+let finalCalculatedScore = 0;
 
-// Tracking arrays used to map visual emoji structures for the Share Button
 let emojiResultMatrix = [];
-
 const positionOrder = ["GK", "DF", "MF", "FW"];
+
+const countryToFlagMap = {
+// --- UEFA (Europe) ---
+    "Austria": "🇦🇹",
+    "Belgium": "🇧🇪",
+    "Croatia": "🇭🇷",
+    "Denmark": "🇩🇰",
+    "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿󠁧󠁢󠁥󠁮󠁧󠁿",
+    "France": "🇫🇷",
+    "Germany": "🇩🇪",
+    "Italy": "🇮🇹",
+    "Netherlands": "🇳🇱",
+    "Portugal": "🇵🇹",
+    "Serbia": "🇷🇸",
+    "Spain": "🇪🇸",
+    "Switzerland": "🇨🇭",
+    "Ukraine": "🇺🇦",
+    "Poland": "🇵🇱",
+    "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+
+    // --- CONMEBOL (South America) ---
+    "Argentina": "🇦🇷",
+    "Brazil": "🇧🇷",
+    "Chile": "🇨🇱",
+    "Colombia": "🇨🇴",
+    "Ecuador": "🇪🇨",
+    "Paraguay": "🇵🇾",
+    "Peru": "🇵🇪",
+    "Uruguay": "🇺🇾",
+    "Venezuela": "🇻🇪",
+
+    // --- CONCACAF (North/Central America & Caribbean) ---
+    "Canada": "🇨🇦",
+    "Costa Rica": "🇨🇷",
+    "Honduras": "🇭🇳",
+    "Jamaica": "🇯🇲",
+    "Mexico": "🇲🇽",
+    "Panama": "🇵🇦",
+    "USA": "🇺🇸",
+
+    // --- CAF (Africa) ---
+    "Algeria": "🇩🇿",
+    "Cameroan": "🇨🇲",
+    "Egypt": "🇪🇬",
+    "Ghana": "🇬🇭",
+    "Ivory Coast": "🇨🇮",
+    "Morocco": "🇲🇦",
+    "Nigeria": "🇳🇬",
+    "Senegal": "🇸🇳",
+    "Tunisia": "🇹🇳",
+    "South Africa": "🇿🇦",
+
+    // --- AFC (Asia) ---
+    "Australia": "🇦🇺",
+    "Iran": "🇮🇷",
+    "Iraq": "🇮🇶",
+    "Japan": "🇯🇵",
+    "Qatar": "🇶🇦",
+    "Saudi Arabia": "🇸🇦",
+    "South Korea": "🇰🇷",
+    "Uzbekistan": "🇺🇿",
+
+    // --- OFC (Oceania) ---
+    "New Zealand": "🇳🇿",
+	"IR Iran": "🇮🇷",
+	"Czechia": "🇨🇿",
+    "Bosnia And Herzegovina": "🇧🇦",
+    "Haiti": "🇭🇹",
+	"Norway": "🇳🇴",
+    "Türkiye": "🇹🇷",
+    "Curaçao": "🇨🇼",
+    "Congo DR": "🇨🇩",
+	"Cabo Verde": "🇨🇻",
+	"Jordan": "🇯🇴",
+	"Korea Republic": "🇰🇷"
+};
+
+function getNationalFlag(countryName) {
+    return countryToFlagMap[countryName] || "🏳️";
+}
 
 fetch('world_cup_players.json')
     .then(response => response.json())
@@ -24,7 +103,16 @@ function startGame() {
     targetPlayer = playersDatabase[Math.floor(Math.random() * playersDatabase.length)];
     console.log("Target Debugger (Cheater View):", targetPlayer);
 
-    document.getElementById('target-country-clue').textContent = `Target Nation: ${targetPlayer.national_team}`;
+    const countryFlag = getNationalFlag(targetPlayer.national_team);
+    
+    // Make the header content highly prominent using structured semantic spans
+    document.getElementById('target-country-clue').innerHTML = `
+        <span>${targetPlayer.national_team}</span> 
+        <span class="flag-emoji">${countryFlag}</span>
+    `;
+    
+    // Update the Sidebar Title dynamically with the active country name
+    document.getElementById('roster-title').textContent = `${targetPlayer.national_team} Team Sheet`;
     
     if (targetPlayer.difficulty === "hard") baseDifficultyPoints = 3000;
     else if (targetPlayer.difficulty === "medium") baseDifficultyPoints = 2000;
@@ -35,8 +123,6 @@ function startGame() {
     renderRosterSidebar();
     updateStatusUI();
     initFormEngine();
-
-    // Trigger initial wrong clue baseline guess
     triggerInitialWrongGuess();
 }
 
@@ -183,15 +269,15 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     let heightArrow = guess.height_cm < targetPlayer.height_cm ? ' ↑' : ' ↓';
     if (guess.height_cm === targetPlayer.height_cm) {
         heightTile.className = 'tile correct';
-        heightTile.textContent = `${guess.height_cm}cm`;
+        heightTile.textContent = guess.height_cm;
         rowEmojis.push('🟩');
     } else if (heightDiff <= 5) {
         heightTile.className = 'tile partial';
-        heightTile.textContent = `${guess.height_cm}cm${heightArrow}`;
+        heightTile.textContent = `${guess.height_cm}${heightArrow}`;
         rowEmojis.push('🟨');
     } else {
         heightTile.className = 'tile incorrect';
-        heightTile.textContent = `${guess.height_cm}cm${heightArrow}`; 
+        heightTile.textContent = `${guess.height_cm}${heightArrow}`; 
         rowEmojis.push('🟥');
     }
     row.appendChild(heightTile);
@@ -219,12 +305,11 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
 
     if (!countAsActiveGuess) return;
 
-    // Track rows to construct share text blocks later
     emojiResultMatrix.push(rowEmojis.join(''));
 
     if (isNameCorrect) {
-        let finalScore = Math.round(baseDifficultyPoints * (guessesRemaining / totalGuessesAllowed));
-        endGame(true, `🎉 Masterclass! You found the player!<br><br>Target: <strong>${targetPlayer.name}</strong><br>Score: <strong>${finalScore}</strong> pts!`);
+        finalCalculatedScore = Math.round(baseDifficultyPoints * (guessesRemaining / totalGuessesAllowed));
+        endGame(true, `🎉 Masterclass! You found the player!<br><br>Target: <strong>${targetPlayer.name}</strong><br>Score: <strong>${finalCalculatedScore}</strong> pts!`);
         return;
     }
 
@@ -232,6 +317,7 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     updateStatusUI();
 
     if (guessesRemaining === 0) {
+        finalCalculatedScore = 0;
         endGame(false, `❌ Out of chances!<br>The target player was <strong>${targetPlayer.name}</strong>.`);
     }
 }
@@ -252,24 +338,21 @@ function closeModal() {
     document.getElementById('victory-modal').classList.add('hidden');
 }
 
-// Wordle-Style Mobile/Desktop Share Engine
 function shareResults() {
     const totalGuessesTaken = totalGuessesAllowed - guessesRemaining;
     const guessDisplayCount = guessesRemaining === 0 && !emojiResultMatrix[emojiResultMatrix.length - 1].includes('🟩🟩🟩🟩🟩🟩') ? 'X' : totalGuessesTaken;
+    const countryFlag = getNationalFlag(targetPlayer.national_team);
     
-    // Construct dynamic message body
-    let shareText = `Ball Knowledge (WC26) - ${targetPlayer.national_team}\n🔮 ${guessDisplayCount}/${totalGuessesAllowed} Guesses\n\n`;
+    let shareText = `Ball Knowledge (WC26) - ${targetPlayer.national_team} ${countryFlag}\n🔮 ${guessDisplayCount}/${totalGuessesAllowed} Guesses\n🎯 Score: ${finalCalculatedScore} pts\n\n`;
     shareText += emojiResultMatrix.join('\n');
     shareText += `\n\nPlay here: ${window.location.href}`;
 
-    // Use native mobile share API if available
     if (navigator.share) {
         navigator.share({
             title: 'Ball Knowledge (WC26)',
             text: shareText
         }).catch(err => console.log('Error sharing:', err));
     } else {
-        // Fallback option for standard desktop browsers to auto-copy to clipboard
         navigator.clipboard.writeText(shareText).then(() => {
             const toast = document.getElementById('toast-notification');
             toast.classList.remove('hidden');

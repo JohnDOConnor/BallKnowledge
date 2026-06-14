@@ -28,7 +28,7 @@ body {
     border: 2px solid #3a3a3c;
     border-radius: 8px;
     padding: 15px;
-    max-height: 520px;
+    max-height: 550px;
     overflow-y: auto;
 }
 
@@ -43,15 +43,38 @@ body {
 }
 
 header h1 {
-    font-size: 1.8rem;
+    font-size: 1.6rem;
     margin-top: 5px;
     margin-bottom: 5px;
-    color: #00bcd4;
+    color: #b5b5b5;
+    text-align: center;
+}
+
+/* Highly Prominent Country Layout Container */
+#target-country-container {
+    background: linear-gradient(135deg, #1e1e24 0%, #121213 100%);
+    border: 2px solid #00bcd4;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 15px;
+    box-shadow: 0 4px 15px rgba(0, 188, 212, 0.2);
 }
 
 header h2 {
-    font-size: 1.2rem;
-    margin-top: 0;
+    font-size: 1.75rem;
+    font-weight: 800;
+    margin: 0;
+    color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+header h2 .flag-emoji {
+    font-size: 2.5rem;
+    line-height: 1;
 }
 
 #status-bar {
@@ -64,34 +87,56 @@ header h2 {
     font-size: 0.95rem;
 }
 
-/* Game Matrix Sizing rules tweaked for narrow columns */
+/* Grid layout rules modified to stretch internal tile structures to match tallest item */
 .grid-header, .guess-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 2fr 1fr 1fr 1fr !important;
+    grid-template-columns: 2fr 1fr 2.5fr 1fr 1fr 1fr !important;
     gap: 4px;
     text-align: center;
-    align-items: center;
+    align-items: stretch; /* Forces equal height columns on the row */
     margin-bottom: 5px;
 }
 
 .grid-header div {
     font-weight: bold;
-    font-size: 0.78rem;
+    font-size: 0.75rem;
     color: #b5b5b5;
     text-transform: uppercase;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 5px;
 }
 
+/* Standardized explicit min-height values applied across grid tiles */
 .tile {
     background-color: #1a1a1c;
     border: 1.5px solid #3a3a3c;
-    padding: 10px 2px;
     font-weight: bold;
     font-size: 0.78rem;
     border-radius: 4px;
     color: #ffffff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 42px; /* Uniform height fallback anchor */
+    box-sizing: border-box;
+    padding: 4px 2px;
+    text-align: center;
+}
+
+/* Non-club boxes drop clipping handles if text overflows bounds safely */
+.tile:not(:nth-child(3)) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+
+/* Club wrapper constraints configured to line wrap freely */
+.guess-row .tile:nth-child(3) {
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.2;
 }
 
 .correct { background-color: #538d4e !important; border-color: #538d4e !important; }
@@ -142,7 +187,7 @@ header h2 {
 
 .autofill-dropdown {
     position: absolute;
-    bottom: 100%; /* Displays drop-up instead of drop-down so keyboard doesn't hide it */
+    bottom: 100%;
     left: 0; right: 0;
     background-color: #1a1a1c;
     border: 1px solid #3a3a3c;
@@ -203,20 +248,26 @@ header h2 {
 /* 📱 CORE MOBILE OPTIMIZATION OVERRIDES 📱 */
 @media (max-width: 768px) {
     #layout-container {
-        grid-template-columns: 1fr; /* Switch to single-column layout */
+        grid-template-columns: 1fr;
         gap: 15px;
     }
     #game-pane, #roster-pane, #instructions-pane {
-        grid-column: 1; /* Stack panels sequentially */
+        grid-column: 1;
     }
     #roster-pane {
-        max-height: 300px; /* Shorten container height on small screens */
+        max-height: 300px;
     }
     .tile {
-        font-size: 0.72rem; /* Shrink font sizes slightly to avoid overflow clipping */
-        padding: 8px 1px;
+        font-size: 0.7rem;
+        min-height: 46px; /* Slightly more room for multi-line wrapped elements on small device screens */
     }
     .grid-header div {
-        font-size: 0.7rem;
+        font-size: 0.68rem;
+    }
+    header h2 {
+        font-size: 1.4rem;
+    }
+    header h2 .flag-emoji {
+        font-size: 2rem;
     }
 }
