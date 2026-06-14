@@ -42,12 +42,17 @@ body {
     line-height: 1.4;
 }
 
-header h1 {
-    font-size: 1.6rem;
-    margin-top: 5px;
-    margin-bottom: 5px;
-    color: #b5b5b5;
+/* 💥 NEW BIGGER & BOLDER BRAND TITLE STYLES 💥 */
+.main-title {
+    font-size: 2.85rem;
+    font-weight: 900;
+    letter-spacing: -1.5px;
+    margin-top: 0;
+    margin-bottom: 8px;
+    color: #00bcd4;
     text-align: center;
+    text-transform: uppercase;
+    text-shadow: 0 3px 6px rgba(0,0,0,0.4);
 }
 
 /* Highly Prominent Country Layout Container */
@@ -87,13 +92,27 @@ header h2 .flag-emoji {
     font-size: 0.95rem;
 }
 
+/* Counter Alignment styles */
+#visitor-counter-wrapper {
+    display: flex;
+    justify-content: center;
+    margin-top: -5px;
+    margin-bottom: 15px;
+    opacity: 0.85;
+}
+
+#visitor-counter-wrapper img {
+    height: 20px;
+    border-radius: 4px;
+}
+
 /* Grid layout rules modified to stretch internal tile structures to match tallest item */
 .grid-header, .guess-row {
     display: grid;
     grid-template-columns: 2fr 1fr 2.5fr 1fr 1fr 1fr !important;
     gap: 4px;
     text-align: center;
-    align-items: stretch; /* Forces equal height columns on the row */
+    align-items: stretch;
     margin-bottom: 5px;
 }
 
@@ -119,20 +138,18 @@ header h2 .flag-emoji {
     display: flex;
     align-items: center;
     justify-content: center;
-    min-height: 42px; /* Uniform height fallback anchor */
+    min-height: 42px;
     box-sizing: border-box;
     padding: 4px 2px;
     text-align: center;
 }
 
-/* Non-club boxes drop clipping handles if text overflows bounds safely */
 .tile:not(:nth-child(3)) {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
 }
 
-/* Club wrapper constraints configured to line wrap freely */
 .guess-row .tile:nth-child(3) {
     white-space: normal !important;
     word-break: break-word !important;
@@ -206,11 +223,21 @@ header h2 .flag-emoji {
     font-size: 0.9rem; font-weight: bold; border-radius: 4px; cursor: pointer;
 }
 
+/* Roster item design improvements for mouse clicks */
 .roster-item {
-    padding: 6px 4px;
+    padding: 8px 6px;
     border-bottom: 1px solid #2a2a2c;
     font-size: 0.88rem;
-    display: flex; justify-content: space-between; align-items: center;
+    display: flex; 
+    justify-content: space-between; 
+    align-items: center;
+    cursor: pointer;
+    transition: background-color 0.15s ease, padding-left 0.15s ease;
+}
+
+.roster-item:hover {
+    background-color: #2a2a2c;
+    padding-left: 10px;
 }
 
 .roster-pos {
@@ -259,10 +286,14 @@ header h2 .flag-emoji {
     }
     .tile {
         font-size: 0.7rem;
-        min-height: 46px; /* Slightly more room for multi-line wrapped elements on small device screens */
+        min-height: 46px;
     }
     .grid-header div {
         font-size: 0.68rem;
+    }
+    .main-title {
+        font-size: 2.15rem; /* Shrinks title text fluidly so it never overflows on small mobile viewports */
+        letter-spacing: -0.75px;
     }
     header h2 {
         font-size: 1.4rem;

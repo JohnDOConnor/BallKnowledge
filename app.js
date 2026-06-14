@@ -10,12 +10,11 @@ let emojiResultMatrix = [];
 const positionOrder = ["GK", "DF", "MF", "FW"];
 
 const countryToFlagMap = {
-// --- UEFA (Europe) ---
     "Austria": "🇦🇹",
     "Belgium": "🇧🇪",
     "Croatia": "🇭🇷",
     "Denmark": "🇩🇰",
-    "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿󠁧󠁢󠁥󠁮󠁧󠁿",
+    "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
     "France": "🇫🇷",
     "Germany": "🇩🇪",
     "Italy": "🇮🇹",
@@ -27,8 +26,6 @@ const countryToFlagMap = {
     "Ukraine": "🇺🇦",
     "Poland": "🇵🇱",
     "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-
-    // --- CONMEBOL (South America) ---
     "Argentina": "🇦🇷",
     "Brazil": "🇧🇷",
     "Chile": "🇨🇱",
@@ -38,19 +35,16 @@ const countryToFlagMap = {
     "Peru": "🇵🇪",
     "Uruguay": "🇺🇾",
     "Venezuela": "🇻🇪",
-
-    // --- CONCACAF (North/Central America & Caribbean) ---
     "Canada": "🇨🇦",
     "Costa Rica": "🇨🇷",
     "Honduras": "🇭🇳",
     "Jamaica": "🇯🇲",
     "Mexico": "🇲🇽",
     "Panama": "🇵🇦",
-    "USA": "🇺🇸",
-
-    // --- CAF (Africa) ---
+    "United States": "🇺🇸",
     "Algeria": "🇩🇿",
-    "Cameroan": "🇨🇲",
+    "Cameroan": "🇨🇲", 
+    "Cameroon": "🇨🇲", 
     "Egypt": "🇪🇬",
     "Ghana": "🇬🇭",
     "Ivory Coast": "🇨🇮",
@@ -59,33 +53,30 @@ const countryToFlagMap = {
     "Senegal": "🇸🇳",
     "Tunisia": "🇹🇳",
     "South Africa": "🇿🇦",
-
-    // --- AFC (Asia) ---
     "Australia": "🇦🇺",
-    "Iran": "🇮🇷",
+    "IR Iran": "🇮🇷",
     "Iraq": "🇮🇶",
     "Japan": "🇯🇵",
     "Qatar": "🇶🇦",
     "Saudi Arabia": "🇸🇦",
     "South Korea": "🇰🇷",
     "Uzbekistan": "🇺🇿",
-
-    // --- OFC (Oceania) ---
     "New Zealand": "🇳🇿",
-	"IR Iran": "🇮🇷",
-	"Czechia": "🇨🇿",
-    "Bosnia And Herzegovina": "🇧🇦",
-    "Haiti": "🇭🇹",
-	"Norway": "🇳🇴",
+    "Norway": "🇳🇴",
     "Türkiye": "🇹🇷",
     "Curaçao": "🇨🇼",
     "Congo DR": "🇨🇩",
-	"Cabo Verde": "🇨🇻",
-	"Jordan": "🇯🇴",
-	"Korea Republic": "🇰🇷"
+    "Czechia": "🇨🇿",
+    "Bosnia And Herzegovina": "🇧🇦",
+    "Haiti": "🇭🇹",
+    "Korea Republic": "🇰🇷",
+    "Jordan": "🇯🇴",
+    "Sweden": "🇸🇪",
+    "Cabo Verde": "🇨🇻"
 };
 
 function getNationalFlag(countryName) {
+    if (!countryName) return "🏳️";
     return countryToFlagMap[countryName] || "🏳️";
 }
 
@@ -105,13 +96,11 @@ function startGame() {
 
     const countryFlag = getNationalFlag(targetPlayer.national_team);
     
-    // Make the header content highly prominent using structured semantic spans
     document.getElementById('target-country-clue').innerHTML = `
         <span>${targetPlayer.national_team}</span> 
         <span class="flag-emoji">${countryFlag}</span>
     `;
     
-    // Update the Sidebar Title dynamically with the active country name
     document.getElementById('roster-title').textContent = `${targetPlayer.national_team} Team Sheet`;
     
     if (targetPlayer.difficulty === "hard") baseDifficultyPoints = 3000;
@@ -141,6 +130,13 @@ function renderRosterSidebar() {
         const item = document.createElement('div');
         item.className = 'roster-item';
         item.innerHTML = `<span>${player.name}</span> <span class="roster-pos">${player.position}</span>`;
+        
+        item.addEventListener('click', () => {
+            if (guessesRemaining <= 0) return;
+            evaluateCustomGuess(player, true);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+
         rosterList.appendChild(item);
     });
 }
@@ -326,6 +322,9 @@ function endGame(isWin, message) {
     document.getElementById('submit-btn').disabled = true;
     document.getElementById('submit-btn').style.background = '#3a3a3c';
     document.getElementById('submit-btn').textContent = "Ended";
+    
+    const items = document.querySelectorAll('.roster-item');
+    items.forEach(el => el.style.pointerEvents = 'none');
     
     setTimeout(() => {
         document.getElementById('modal-title').textContent = isWin ? "🏆 Victory! 🏆" : "💥 Defeat 💥";
