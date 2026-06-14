@@ -5,6 +5,9 @@ let guessesRemaining = 5;
 const totalGuessesAllowed = 5;
 let baseDifficultyPoints = 1000;
 
+// Tracking arrays used to map visual emoji structures for the Share Button
+let emojiResultMatrix = [];
+
 const positionOrder = ["GK", "DF", "MF", "FW"];
 
 fetch('world_cup_players.json')
@@ -13,12 +16,11 @@ fetch('world_cup_players.json')
         playersDatabase = data;
         startGame();
     })
-    .catch(err => console.error("Error loading player database array asset:", err));
+    .catch(err => console.error("Error loading player database asset:", err));
 
 function startGame() {
     if (playersDatabase.length === 0) return;
     
-    // Pick target player
     targetPlayer = playersDatabase[Math.floor(Math.random() * playersDatabase.length)];
     console.log("Target Debugger (Cheater View):", targetPlayer);
 
@@ -28,14 +30,13 @@ function startGame() {
     else if (targetPlayer.difficulty === "medium") baseDifficultyPoints = 2000;
     else baseDifficultyPoints = 1000;
 
-    // Filter database to construct the specific national roster panel
     nationalRoster = playersDatabase.filter(p => p.national_team === targetPlayer.national_team);
     
     renderRosterSidebar();
     updateStatusUI();
     initFormEngine();
 
-    // Trigger random initial wrong guess
+    // Trigger initial wrong clue baseline guess
     triggerInitialWrongGuess();
 }
 
@@ -43,7 +44,6 @@ function renderRosterSidebar() {
     const rosterList = document.getElementById('roster-list');
     rosterList.innerHTML = '';
     
-    // Sort Roster by Position hierarchy (GK -> DF -> MF -> FW) then alphabetically by name
     const sortedRoster = [...nationalRoster].sort((a, b) => {
         let orderA = positionOrder.indexOf(a.position);
         let orderB = positionOrder.indexOf(b.position);
@@ -60,12 +60,9 @@ function renderRosterSidebar() {
 }
 
 function triggerInitialWrongGuess() {
-    // Select options inside the national roster that are NOT the target player
     const wrongOptions = nationalRoster.filter(p => p.name.toUpperCase() !== targetPlayer.name.toUpperCase());
-    
     if (wrongOptions.length > 0) {
         const randomWrongPlayer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
-        // Add to grid board as hint without reducing the remaining guesses
         evaluateCustomGuess(randomWrongPlayer, false); 
     }
 }
@@ -111,7 +108,7 @@ function initFormEngine() {
         const matchedPlayerObj = nationalRoster.find(p => p.name.toUpperCase() === enteredName);
 
         if (!matchedPlayerObj) {
-            alert("Player name not found in this national team roster!");
+            alert("Player name not found in this team sheet!");
             return;
         }
 
@@ -125,18 +122,23 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     const row = document.createElement('div');
     row.className = 'guess-row';
 
+    let rowEmojis = [];
+
     // 1. Name Tile
     const nameTile = document.createElement('div');
     const isNameCorrect = guess.name.toUpperCase() === targetPlayer.name.toUpperCase();
     nameTile.className = 'tile ' + (isNameCorrect ? 'correct' : 'incorrect');
     nameTile.textContent = guess.name;
     row.appendChild(nameTile);
+    rowEmojis.push(isNameCorrect ? '🟩' : '🟥');
 
     // 2. Position Tile
     const posTile = document.createElement('div');
-    posTile.className = 'tile ' + (guess.position === targetPlayer.position ? 'correct' : 'incorrect');
+    const isPosCorrect = guess.position === targetPlayer.position;
+    posTile.className = 'tile ' + (isPosCorrect ? 'correct' : 'incorrect');
     posTile.textContent = guess.position;
     row.appendChild(posTile);
+    rowEmojis.push(isPosCorrect ? '🟩' : '🟥');
 
     // 3. Club / League Country Tile
     const clubTile = document.createElement('div');
@@ -145,59 +147,71 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     
     if (isClubCorrect) {
         clubTile.className = 'tile correct';
+        rowEmojis.push('🟩');
     } else if (isLeagueCorrect) {
-        clubTile.className = 'tile partial'; // Yellow indicator if playing within the same league country
+        clubTile.className = 'tile partial';
+        rowEmojis.push('🟨');
     } else {
         clubTile.className = 'tile incorrect';
+        rowEmojis.push('🟥');
     }
     clubTile.textContent = guess.club;
     row.appendChild(clubTile);
 
-    // 4. Age Tile (+ Up/Down Directional Arrows)
+    // 4. Age Tile
     const ageTile = document.createElement('div');
     const ageDiff = Math.abs(guess.age - targetPlayer.age);
     let ageArrow = guess.age < targetPlayer.age ? ' ↑' : ' ↓';
     if (guess.age === targetPlayer.age) {
         ageTile.className = 'tile correct';
         ageTile.textContent = guess.age;
+        rowEmojis.push('🟩');
     } else if (ageDiff <= 2) {
         ageTile.className = 'tile partial';
         ageTile.textContent = `${guess.age}${ageArrow}`;
+        rowEmojis.push('🟨');
     } else {
         ageTile.className = 'tile incorrect';
         ageTile.textContent = `${guess.age}${ageArrow}`;
+        rowEmojis.push('🟥');
     }
     row.appendChild(ageTile);
 
-    // 5. Height Tile (+ Up/Down Directional Arrows)
+    // 5. Height Tile
     const heightTile = document.createElement('div');
     const heightDiff = Math.abs(guess.height_cm - targetPlayer.height_cm);
     let heightArrow = guess.height_cm < targetPlayer.height_cm ? ' ↑' : ' ↓';
     if (guess.height_cm === targetPlayer.height_cm) {
         heightTile.className = 'tile correct';
-        heightTile.textContent = `${guess.height_cm} cm`;
+        heightTile.textContent = `${guess.height_cm}cm`;
+        rowEmojis.push('🟩');
     } else if (heightDiff <= 5) {
         heightTile.className = 'tile partial';
-        heightTile.textContent = `${guess.height_cm} cm${heightArrow}`;
+        heightTile.textContent = `${guess.height_cm}cm${heightArrow}`;
+        rowEmojis.push('🟨');
     } else {
         heightTile.className = 'tile incorrect';
-        heightTile.textContent = `${guess.height_cm} cm${heightArrow}`; 
+        heightTile.textContent = `${guess.height_cm}cm${heightArrow}`; 
+        rowEmojis.push('🟥');
     }
     row.appendChild(heightTile);
 
-    // 6. Caps Tile (+ Up/Down Directional Arrows)
+    // 6. Caps Tile
     const capsTile = document.createElement('div');
     const capsDiff = Math.abs(guess.caps - targetPlayer.caps);
     let capsArrow = guess.caps < targetPlayer.caps ? ' ↑' : ' ↓';
     if (guess.caps === targetPlayer.caps) {
         capsTile.className = 'tile correct';
         capsTile.textContent = guess.caps;
+        rowEmojis.push('🟩');
     } else if (capsDiff <= 10) {
         capsTile.className = 'tile partial';
         capsTile.textContent = `${guess.caps}${capsArrow}`;
+        rowEmojis.push('🟨');
     } else {
         capsTile.className = 'tile incorrect';
         capsTile.textContent = `${guess.caps}${capsArrow}`;
+        rowEmojis.push('🟥');
     }
     row.appendChild(capsTile);
 
@@ -205,10 +219,12 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
 
     if (!countAsActiveGuess) return;
 
-    // Evaluate Win Condition
+    // Track rows to construct share text blocks later
+    emojiResultMatrix.push(rowEmojis.join(''));
+
     if (isNameCorrect) {
         let finalScore = Math.round(baseDifficultyPoints * (guessesRemaining / totalGuessesAllowed));
-        endGame(true, `🎉 Masterclass! You guessed the player correctly!<br><br>Player: <strong>${targetPlayer.name}</strong><br>Difficulty Tier: <strong>${targetPlayer.difficulty.toUpperCase()}</strong><br>Final Calculated Score: <strong>${finalScore}</strong> pts!`);
+        endGame(true, `🎉 Masterclass! You found the player!<br><br>Target: <strong>${targetPlayer.name}</strong><br>Score: <strong>${finalScore}</strong> pts!`);
         return;
     }
 
@@ -216,17 +232,17 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     updateStatusUI();
 
     if (guessesRemaining === 0) {
-        endGame(false, `❌ Out of chances! The player was actually <strong>${targetPlayer.name}</strong>.<br>Specs: ${targetPlayer.position} | ${targetPlayer.club} | ${targetPlayer.age} yrs | ${targetPlayer.height_cm}cm | ${targetPlayer.caps} caps.`);
+        endGame(false, `❌ Out of chances!<br>The target player was <strong>${targetPlayer.name}</strong>.`);
     }
 }
 
 function endGame(isWin, message) {
     document.getElementById('submit-btn').disabled = true;
     document.getElementById('submit-btn').style.background = '#3a3a3c';
-    document.getElementById('submit-btn').textContent = "Game Over";
+    document.getElementById('submit-btn').textContent = "Ended";
     
     setTimeout(() => {
-        document.getElementById('modal-title').textContent = isWin ? "🏆 Spec Mastery! 🏆" : "💥 Defeat 💥";
+        document.getElementById('modal-title').textContent = isWin ? "🏆 Victory! 🏆" : "💥 Defeat 💥";
         document.getElementById('victory-text').innerHTML = message;
         document.getElementById('victory-modal').classList.remove('hidden');
     }, 600);
@@ -234,4 +250,32 @@ function endGame(isWin, message) {
 
 function closeModal() {
     document.getElementById('victory-modal').classList.add('hidden');
+}
+
+// Wordle-Style Mobile/Desktop Share Engine
+function shareResults() {
+    const totalGuessesTaken = totalGuessesAllowed - guessesRemaining;
+    const guessDisplayCount = guessesRemaining === 0 && !emojiResultMatrix[emojiResultMatrix.length - 1].includes('🟩🟩🟩🟩🟩🟩') ? 'X' : totalGuessesTaken;
+    
+    // Construct dynamic message body
+    let shareText = `Ball Knowledge (WC26) - ${targetPlayer.national_team}\n🔮 ${guessDisplayCount}/${totalGuessesAllowed} Guesses\n\n`;
+    shareText += emojiResultMatrix.join('\n');
+    shareText += `\n\nPlay here: ${window.location.href}`;
+
+    // Use native mobile share API if available
+    if (navigator.share) {
+        navigator.share({
+            title: 'Ball Knowledge (WC26)',
+            text: shareText
+        }).catch(err => console.log('Error sharing:', err));
+    } else {
+        // Fallback option for standard desktop browsers to auto-copy to clipboard
+        navigator.clipboard.writeText(shareText).then(() => {
+            const toast = document.getElementById('toast-notification');
+            toast.classList.remove('hidden');
+            setTimeout(() => toast.classList.add('hidden'), 2500);
+        }).catch(err => {
+            alert("Could not copy score automatically. Copy from here:\n\n" + shareText);
+        });
+    }
 }

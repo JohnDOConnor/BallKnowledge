@@ -8,31 +8,10 @@
 </head>
 <body>
     <div id="layout-container">
-        <div id="instructions-pane">
-            <h3>How to Play</h3>
-            <p>Guess the hidden World Cup player from the team sheet provided on the right!</p>
-            
-            <h4>Color Codes & Clues:</h4>
-            <ul>
-                <li><span class="badge correct">Green</span> Direct exact match.</li>
-                <li><span class="badge partial">Yellow</span> Close approximation or shared attribute:
-                    <ul>
-                        <li><strong>Club/League:</strong> Plays in the same league country.</li>
-                        <li><strong>Age:</strong> Within ±2 years.</li>
-                        <li><strong>Height:</strong> Within ±5 cm.</li>
-                        <li><strong>Caps:</strong> Within ±10 appearances.</li>
-                    </ul>
-                </li>
-                <li><span class="badge incorrect">Red</span> No match / completely outside variance range.</li>
-            </ul>
-            <h4>Directional Arrows:</h4>
-            <p>The symbols <strong>↑</strong> and <strong>↓</strong> indicate if the target player's true values are higher or lower than your submitted guess.</p>
-        </div>
-
         <div id="game-pane">
             <header>
                 <h1>Ball Knowledge (WC26)</h1>
-                <h2 id="target-country-clue">Nation: Loading...</h2>
+                <h2 id="target-country-clue">Target Nation: Loading...</h2>
                 <div id="status-bar">
                     <span>Guesses Left: <strong id="guesses-left">5</strong></span> | 
                     <span>Current Max Value: <strong id="potential-score">0</strong> pts</span>
@@ -44,35 +23,59 @@
                 <div>Pos</div>
                 <div>Club</div>
                 <div>Age</div>
-                <div>Height</div>
+                <div>Hgt</div>
                 <div>Caps</div>
             </div>
 
             <div id="guess-grid"></div>
 
             <form id="guess-form">
-                <h3>Guess the Player from the Sheet:</h3>
+                <h3>Guess the Player from the Team Sheet:</h3>
                 <div class="form-row">
                     <div class="autocomplete-wrapper">
                         <input type="text" id="input-name" placeholder="Type player name..." autocomplete="off" required>
                         <div id="name-autofill-list" class="autofill-dropdown"></div>
                     </div>
-                    <button type="submit" id="submit-btn">Submit Guess</button>
+                    <button type="submit" id="submit-btn">Submit</button>
                 </div>
             </form>
         </div>
 
         <div id="roster-pane">
-            <h3>Team Sheet</h3>
+            <h3>National Team Sheet</h3>
             <div id="roster-list"></div>
         </div>
+
+        <div id="instructions-pane">
+            <h3>How to Play</h3>
+            <p>Guess the hidden World Cup player from the team sheet!</p>
+            
+            <h4>Color Guide:</h4>
+            <ul>
+                <li><span class="badge correct">Green</span> Exact match.</li>
+                <li><span class="badge partial">Yellow</span> Shared attribute or close variance:
+                    <ul>
+                        <li><strong>Club/Country:</strong> Same domestic league country.</li>
+                        <li><strong>Age:</strong> Within ±2 years.</li>
+                        <li><strong>Height:</strong> Within ±5 cm.</li>
+                        <li><strong>Caps:</strong> Within ±10 appearances.</li>
+                    </ul>
+                </li>
+                <li><span class="badge incorrect">Red</span> No match / outside range.</li>
+            </ul>
+            <h4>Directional Arrows:</h4>
+            <p>The symbols <strong>↑</strong> and <strong>↓</strong> mean the target player's stats are higher or lower than your guess.</p>
+        </div>
     </div>
+
+    <div id="toast-notification" class="toast hidden">Copied score to clipboard!</div>
 
     <div id="victory-modal" class="modal hidden">
         <div class="modal-content">
             <h2 id="modal-title">🎉 Game Over 🎉</h2>
             <p id="victory-text"></p>
             <div class="modal-buttons">
+                <button onclick="shareResults()" class="btn-share">📊 Share Results</button>
                 <button onclick="location.reload()" class="btn-primary">Play Again</button>
                 <button onclick="closeModal()" class="btn-secondary">Review Board</button>
             </div>

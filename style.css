@@ -3,50 +3,72 @@ body {
     background-color: #121213;
     color: #ffffff;
     margin: 0;
-    padding: 20px;
+    padding: 10px;
     display: flex;
     justify-content: center;
 }
 
-/* Three Column Layout Setup */
+/* Master Layout container configured for desktop view as baseline */
 #layout-container {
     display: grid;
-    grid-template-columns: 240px 2fr 240px;
+    grid-template-columns: 2fr 1fr;
     gap: 20px;
-    max-width: 1280px;
+    max-width: 1100px;
     width: 100%;
 }
 
 #game-pane {
+    grid-column: 1;
     width: 100%;
 }
 
-header {
-    text-align: center;
-    margin-bottom: 20px;
+#roster-pane {
+    grid-column: 2;
+    background-color: #1a1a1c;
+    border: 2px solid #3a3a3c;
+    border-radius: 8px;
+    padding: 15px;
+    max-height: 520px;
+    overflow-y: auto;
+}
+
+#instructions-pane {
+    grid-column: 1 / span 2;
+    background-color: #1a1a1c;
+    border: 2px solid #3a3a3c;
+    border-radius: 8px;
+    padding: 15px;
+    font-size: 0.88rem;
+    line-height: 1.4;
+}
+
+header h1 {
+    font-size: 1.8rem;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    color: #00bcd4;
+}
+
+header h2 {
+    font-size: 1.2rem;
+    margin-top: 0;
 }
 
 #status-bar {
     background-color: #1a1a1c;
-    padding: 10px;
+    padding: 8px;
     border-radius: 6px;
-    margin-bottom: 20px;
+    margin-bottom: 15px;
     text-align: center;
     border: 1px solid #3a3a3c;
-    font-size: 1.1rem;
+    font-size: 0.95rem;
 }
 
-#target-country-clue {
-    color: #00bcd4;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-    margin-bottom: 10px;
-}
-
+/* Game Matrix Sizing rules tweaked for narrow columns */
 .grid-header, .guess-row {
     display: grid;
-    grid-template-columns: 2fr 1fr 2.5fr 1fr 1fr 1fr !important;
-    gap: 5px;
+    grid-template-columns: 2fr 1fr 2fr 1fr 1fr 1fr !important;
+    gap: 4px;
     text-align: center;
     align-items: center;
     margin-bottom: 5px;
@@ -54,17 +76,17 @@ header {
 
 .grid-header div {
     font-weight: bold;
-    font-size: 0.85rem;
+    font-size: 0.78rem;
     color: #b5b5b5;
-    padding-bottom: 5px;
+    text-transform: uppercase;
 }
 
 .tile {
     background-color: #1a1a1c;
-    border: 2px solid #3a3a3c;
-    padding: 12px 4px;
+    border: 1.5px solid #3a3a3c;
+    padding: 10px 2px;
     font-weight: bold;
-    font-size: 0.9rem;
+    font-size: 0.78rem;
     border-radius: 4px;
     color: #ffffff;
     overflow: hidden;
@@ -72,197 +94,129 @@ header {
     white-space: nowrap;
 }
 
-/* Color Status Highlights */
 .correct { background-color: #538d4e !important; border-color: #538d4e !important; }
 .partial { background-color: #b59f3b !important; border-color: #b59f3b !important; }
 .incorrect { background-color: #e03e3e !important; border-color: #e03e3e !important; }
 
-/* Left Instructions Pane Styles */
-#instructions-pane {
-    background-color: #1a1a1c;
-    border: 2px solid #3a3a3c;
-    border-radius: 8px;
-    padding: 15px;
-    font-size: 0.88rem;
-    line-height: 1.4;
-    max-height: 580px;
-    overflow-y: auto;
-}
-
-#instructions-pane h3, #instructions-pane h4 {
+#instructions-pane h3, #instructions-pane h4, #roster-pane h3 {
     margin-top: 0;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     color: #00bcd4;
 }
 
-#instructions-pane ul {
-    padding-left: 15px;
-    margin-bottom: 12px;
-}
-
-#instructions-pane li {
-    margin-bottom: 6px;
-}
+#instructions-pane ul { padding-left: 15px; margin-bottom: 10px; }
+#instructions-pane li { margin-bottom: 4px; }
 
 .badge {
     display: inline-block;
-    padding: 2px 6px;
+    padding: 1px 5px;
     font-weight: bold;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     border-radius: 3px;
     margin-right: 4px;
     text-transform: uppercase;
 }
 
-/* Form Styles */
 #guess-form {
     background-color: #1a1a1c;
     border: 2px solid #3a3a3c;
     border-radius: 8px;
-    padding: 15px;
-    margin-top: 30px;
+    padding: 12px;
+    margin-top: 20px;
 }
 
-#guess-form h3 {
-    margin-top: 0;
-    margin-bottom: 12px;
-    font-size: 1rem;
-    color: #00bcd4;
-}
-
-.form-row {
-    display: grid;
-    grid-template-columns: 3fr 1fr;
-    gap: 10px;
-}
-
-.autocomplete-wrapper {
-    position: relative;
-    width: 100%;
-}
+#guess-form h3 { margin: 0 0 10px 0; font-size: 0.95rem; color: #00bcd4; }
+.form-row { display: grid; grid-template-columns: 4fr 1fr; gap: 8px; }
+.autocomplete-wrapper { position: relative; width: 100%; }
 
 #guess-form input {
     background-color: #121213;
     border: 1px solid #3a3a3c;
     color: white;
-    padding: 12px;
+    padding: 10px;
     border-radius: 4px;
-    font-size: 1rem;
+    font-size: 0.95rem;
     width: 100%;
     box-sizing: border-box;
 }
 
 .autofill-dropdown {
     position: absolute;
-    top: 100%;
-    left: 0;
-    right: 0;
+    bottom: 100%; /* Displays drop-up instead of drop-down so keyboard doesn't hide it */
+    left: 0; right: 0;
     background-color: #1a1a1c;
     border: 1px solid #3a3a3c;
-    border-top: none;
-    max-height: 200px;
+    border-bottom: none;
+    max-height: 160px;
     overflow-y: auto;
     z-index: 999;
-    border-radius: 0 0 4px 4px;
 }
 
-.autofill-dropdown div {
-    padding: 10px;
-    cursor: pointer;
-    font-size: 0.9rem;
-    border-bottom: 1px solid #2a2a2c;
-    color: #e0e0e0;
-}
-
-.autofill-dropdown div:hover {
-    background-color: #2a2a2c;
-    color: #ffffff;
-}
+.autofill-dropdown div { padding: 9px; cursor: pointer; font-size: 0.88rem; border-bottom: 1px solid #2a2a2c; }
+.autofill-dropdown div:hover { background-color: #2a2a2c; }
 
 #submit-btn {
     background-color: #00bcd4;
-    color: white;
-    border: none;
-    padding: 12px;
-    font-size: 1rem;
-    font-weight: bold;
-    border-radius: 4px;
-    cursor: pointer;
-}
-
-#submit-btn:hover {
-    background-color: #0097a7;
-}
-
-/* Right Roster Side Pane Styles */
-#roster-pane {
-    background-color: #1a1a1c;
-    border: 2px solid #3a3a3c;
-    border-radius: 8px;
-    padding: 15px;
-    max-height: 580px;
-    overflow-y: auto;
-}
-
-#roster-pane h3 {
-    margin-top: 0;
-    color: #00bcd4;
-    border-bottom: 1px solid #3a3a3c;
-    padding-bottom: 8px;
-    text-align: center;
+    color: white; border: none; padding: 10px;
+    font-size: 0.9rem; font-weight: bold; border-radius: 4px; cursor: pointer;
 }
 
 .roster-item {
-    padding: 8px 5px;
+    padding: 6px 4px;
     border-bottom: 1px solid #2a2a2c;
-    font-size: 0.95rem;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    font-size: 0.88rem;
+    display: flex; justify-content: space-between; align-items: center;
 }
 
 .roster-pos {
-    color: #b5b5b5;
-    font-weight: bold;
-    font-size: 0.85rem;
-    background-color: #2a2a2c;
-    padding: 2px 6px;
-    border-radius: 3px;
+    color: #b5b5b5; font-weight: bold; font-size: 0.75rem;
+    background-color: #2a2a2c; padding: 1px 5px; border-radius: 3px;
 }
 
-/* Modals and Overlay Interfaces */
+/* Modals & Sharing UI elements */
 .modal {
-    position: fixed;
-    top: 0; left: 0; width: 100%; height: 100%;
-    background-color: rgba(0,0,0,0.8);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 1000;
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background-color: rgba(0,0,0,0.85);
+    display: flex; justify-content: center; align-items: center; z-index: 1000;
 }
 .modal-content {
-    background-color: #1e1e1f;
-    padding: 30px;
-    border-radius: 10px;
-    text-align: center;
-    border: 2px solid #3a3a3c;
-    max-width: 440px;
-    width: 90%;
+    background-color: #1e1e1f; padding: 20px; border-radius: 10px;
+    border: 2px solid #3a3a3c; max-width: 90%; width: 380px; text-align: center;
 }
-.modal-buttons {
-    display: flex;
-    gap: 10px;
-    justify-content: center;
-    margin-top: 20px;
-}
-.modal-buttons button {
-    border: none;
-    padding: 10px 20px;
-    font-size: 1rem;
-    border-radius: 5px;
-    cursor: pointer;
-    font-weight: bold;
-}
+.modal-buttons { display: flex; flex-direction: column; gap: 8px; margin-top: 15px; }
+.modal-buttons button { border: none; padding: 11px; font-size: 0.95rem; border-radius: 5px; cursor: pointer; font-weight: bold; }
+
+.btn-share { background-color: #00bcd4; color: white; }
 .btn-primary { background-color: #538d4e; color: white; }
 .btn-secondary { background-color: #3a3a3c; color: #e0e0e0; }
-.btn-primary:hover { background-color: #43733f; }
-.btn-secondary:hover { background-color: #4a4a4c; }
+
+/* Toast Notifications styling */
+.toast {
+    position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%);
+    background-color: #538d4e; color: white; padding: 12px 24px;
+    border-radius: 20px; font-weight: bold; z-index: 2000; font-size: 0.9rem;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+    transition: opacity 0.3s ease;
+}
 .hidden { display: none !important; }
+
+/* 📱 CORE MOBILE OPTIMIZATION OVERRIDES 📱 */
+@media (max-width: 768px) {
+    #layout-container {
+        grid-template-columns: 1fr; /* Switch to single-column layout */
+        gap: 15px;
+    }
+    #game-pane, #roster-pane, #instructions-pane {
+        grid-column: 1; /* Stack panels sequentially */
+    }
+    #roster-pane {
+        max-height: 300px; /* Shorten container height on small screens */
+    }
+    .tile {
+        font-size: 0.72rem; /* Shrink font sizes slightly to avoid overflow clipping */
+        padding: 8px 1px;
+    }
+    .grid-header div {
+        font-size: 0.7rem;
+    }
+}
