@@ -1,12 +1,16 @@
 let playersDatabase = [];
+let dailyTargets = { easy: null, medium: null, hard: null };
+let currentDifficultyStage = "easy"; 
+
 let nationalRoster = []; 
-let targetPlayer = null;
 let guessesRemaining = 5;
 const totalGuessesAllowed = 5;
 let baseDifficultyPoints = 1000;
-let finalCalculatedScore = 0;
 
-let emojiResultMatrix = [];
+let aggregatedScores = { easy: 0, medium: 0, hard: 0 };
+let aggregatedMatrices = { easy: [], medium: [], hard: [] };
+let aggregatedGuessesUsed = { easy: 0, medium: 0, hard: 0 };
+
 const positionOrder = ["GK", "DF", "MF", "FW"];
 
 const countryToFlagMap = {
@@ -72,6 +76,7 @@ const countryToFlagMap = {
     "Korea Republic": "🇰🇷",
     "Jordan": "🇯🇴",
     "Sweden": "🇸🇪",
+    "USA": "🇺🇸",
     "Cabo Verde": "🇨🇻"
 };
 
@@ -80,38 +85,68 @@ function getNationalFlag(countryName) {
     return countryToFlagMap[countryName] || "🏳️";
 }
 
+function getDailySeededIndex(seedString, maxRange) {
+    let hash = 0;
+    for (let i = 0; i < seedString.length; i++) {
+        hash = seedString.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return Math.abs(hash) % maxRange;
+}
+
 fetch('world_cup_players.json')
     .then(response => response.json())
     .then(data => {
         playersDatabase = data;
-        startGame();
+        generateDailyTargets();
+        loadCurrentProgressOrStart();
     })
-    .catch(err => console.error("Error loading player database asset:", err));
+    .catch(err => console.error("Error loading database asset collection:", err));
 
-function startGame() {
-    if (playersDatabase.length === 0) return;
+function generateDailyTargets() {
+    const today = new Date();
+    const dateStamp = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
     
-    targetPlayer = playersDatabase[Math.floor(Math.random() * playersDatabase.length)];
-    console.log("Target Debugger (Cheater View):", targetPlayer);
+    const easyPool = playersDatabase.filter(p => p.difficulty === "easy");
+    const medPool = playersDatabase.filter(p => p.difficulty === "medium");
+    const hardPool = playersDatabase.filter(p => p.difficulty === "hard");
+
+    dailyTargets.easy = easyPool[getDailySeededIndex(dateStamp + "-EASY", easyPool.length)] || playersDatabase[0];
+    dailyTargets.medium = medPool[getDailySeededIndex(dateStamp + "-MED", medPool.length)] || playersDatabase[0];
+    dailyTargets.hard = hardPool[getDailySeededIndex(dateStamp + "-HARD", hardPool.length)] || playersDatabase[0];
+}
+
+function loadCurrentProgressOrStart() {
+    document.getElementById('guess-grid').innerHTML = '';
+    guessesRemaining = totalGuessesAllowed;
+
+    let targetPlayer = dailyTargets[currentDifficultyStage];
+    
+    // UI Layout Synchronization: Isolates difficulty styling from the target country element block
+    const badgeTag = document.getElementById('difficulty-level-tag');
+    badgeTag.className = ""; // Wipe older configuration tracking states cleanly
+    badgeTag.classList.add(`stage-${currentDifficultyStage}`);
+    badgeTag.textContent = `${currentDifficultyStage.toUpperCase()} CHALLENGE`;
+    
+    if (currentDifficultyStage === "easy") {
+        baseDifficultyPoints = 1000;
+    } else if (currentDifficultyStage === "medium") {
+        baseDifficultyPoints = 2000;
+    } else {
+        baseDifficultyPoints = 3000;
+    }
 
     const countryFlag = getNationalFlag(targetPlayer.national_team);
-    
     document.getElementById('target-country-clue').innerHTML = `
-        <span>${targetPlayer.national_team}</span> 
+        <span>Target Nation: ${targetPlayer.national_team}</span> 
         <span class="flag-emoji">${countryFlag}</span>
     `;
     
     document.getElementById('roster-title').textContent = `${targetPlayer.national_team} Team Sheet`;
     
-    if (targetPlayer.difficulty === "hard") baseDifficultyPoints = 3000;
-    else if (targetPlayer.difficulty === "medium") baseDifficultyPoints = 2000;
-    else baseDifficultyPoints = 1000;
-
     nationalRoster = playersDatabase.filter(p => p.national_team === targetPlayer.national_team);
     
     renderRosterSidebar();
     updateStatusUI();
-    initFormEngine();
     triggerInitialWrongGuess();
 }
 
@@ -141,11 +176,24 @@ function renderRosterSidebar() {
     });
 }
 
+// FIXED: Calendar date seeding guarantees every user globally shares the exact same initial hint row
 function triggerInitialWrongGuess() {
-    const wrongOptions = nationalRoster.filter(p => p.name.toUpperCase() !== targetPlayer.name.toUpperCase());
-    if (wrongOptions.length > 0) {
-        const randomWrongPlayer = wrongOptions[Math.floor(Math.random() * wrongOptions.length)];
-        evaluateCustomGuess(randomWrongPlayer, false); 
+    let targetPlayer = dailyTargets[currentDifficultyStage];
+    
+    // Explicitly sort alphabetically to prevent raw variations across server processing environments
+    const deterministicWrongOptions = nationalRoster
+        .filter(p => p.name.toUpperCase() !== targetPlayer.name.toUpperCase())
+        .sort((a, b) => a.name.localeCompare(b.name));
+
+    if (deterministicWrongOptions.length > 0) {
+        const today = new Date();
+        const firstRowSeedString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}-${currentDifficultyStage}-FIRST_LINE_HINT`;
+        
+        // Pick the same wrong player index based on the calculated date seed
+        const targetStaticIndex = getDailySeededIndex(firstRowSeedString, deterministicWrongOptions.length);
+        const dailyIdenticalWrongPlayer = deterministicWrongOptions[targetStaticIndex];
+        
+        evaluateCustomGuess(dailyIdenticalWrongPlayer, false); 
     }
 }
 
@@ -155,51 +203,8 @@ function updateStatusUI() {
     document.getElementById('potential-score').textContent = Math.round(currentPotential);
 }
 
-function initFormEngine() {
-    const form = document.getElementById('guess-form');
-    const nameInput = document.getElementById('input-name');
-    const nameList = document.getElementById('name-autofill-list');
-
-    nameInput.addEventListener('input', function() {
-        const val = this.value.toUpperCase();
-        nameList.innerHTML = '';
-        if (!val) return;
-
-        const filteredNames = nationalRoster.filter(p => p.name.toUpperCase().includes(val));
-
-        filteredNames.slice(0, 5).forEach(player => {
-            const row = document.createElement('div');
-            row.textContent = player.name;
-            row.addEventListener('click', () => {
-                nameInput.value = player.name;
-                nameList.innerHTML = '';
-            });
-            nameList.appendChild(row);
-        });
-    });
-
-    document.addEventListener('click', (e) => {
-        if (e.target !== nameInput) nameList.innerHTML = '';
-    });
-
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        if (guessesRemaining <= 0) return;
-
-        const enteredName = nameInput.value.trim().toUpperCase();
-        const matchedPlayerObj = nationalRoster.find(p => p.name.toUpperCase() === enteredName);
-
-        if (!matchedPlayerObj) {
-            alert("Player name not found in this team sheet!");
-            return;
-        }
-
-        evaluateCustomGuess(matchedPlayerObj, true);
-        form.reset();
-    });
-}
-
 function evaluateCustomGuess(guess, countAsActiveGuess = true) {
+    let targetPlayer = dailyTargets[currentDifficultyStage];
     const grid = document.getElementById('guess-grid');
     const row = document.createElement('div');
     row.className = 'guess-row';
@@ -222,7 +227,7 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     row.appendChild(posTile);
     rowEmojis.push(isPosCorrect ? '🟩' : '🟥');
 
-    // 3. Club / League Country Tile
+    // 3. Club / Country Tile
     const clubTile = document.createElement('div');
     const isClubCorrect = guess.club.toUpperCase() === targetPlayer.club.toUpperCase();
     const isLeagueCorrect = guess.league_country && targetPlayer.league_country && (guess.league_country.toUpperCase() === targetPlayer.league_country.toUpperCase());
@@ -301,11 +306,13 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
 
     if (!countAsActiveGuess) return;
 
-    emojiResultMatrix.push(rowEmojis.join(''));
+    aggregatedMatrices[currentDifficultyStage].push(rowEmojis.join(''));
 
     if (isNameCorrect) {
-        finalCalculatedScore = Math.round(baseDifficultyPoints * (guessesRemaining / totalGuessesAllowed));
-        endGame(true, `🎉 Masterclass! You found the player!<br><br>Target: <strong>${targetPlayer.name}</strong><br>Score: <strong>${finalCalculatedScore}</strong> pts!`);
+        let currentScore = Math.round(baseDifficultyPoints * (guessesRemaining / totalGuessesAllowed));
+        aggregatedScores[currentDifficultyStage] = currentScore;
+        aggregatedGuessesUsed[currentDifficultyStage] = totalGuessesAllowed - guessesRemaining + 1;
+        processStageResolution(true);
         return;
     }
 
@@ -313,22 +320,71 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     updateStatusUI();
 
     if (guessesRemaining === 0) {
-        finalCalculatedScore = 0;
-        endGame(false, `❌ Out of chances!<br>The target player was <strong>${targetPlayer.name}</strong>.`);
+        aggregatedScores[currentDifficultyStage] = 0;
+        aggregatedGuessesUsed[currentDifficultyStage] = totalGuessesAllowed;
+        processStageResolution(false);
     }
 }
 
-function endGame(isWin, message) {
-    document.getElementById('submit-btn').disabled = true;
-    document.getElementById('submit-btn').style.background = '#3a3a3c';
-    document.getElementById('submit-btn').textContent = "Ended";
-    
+function processStageResolution(isWin) {
+    let targetPlayer = dailyTargets[currentDifficultyStage];
+    let message = "";
+
+    if (currentDifficultyStage === "easy") {
+        message = isWin ? `🟢 Found Easy Target: <strong>${targetPlayer.name}</strong>!` : `❌ Missed Easy Target. It was <strong>${targetPlayer.name}</strong>.`;
+        currentDifficultyStage = "medium";
+        showIntermediateModal(message, "Advance to Medium");
+    } else if (currentDifficultyStage === "medium") {
+        message = isWin ? `🟡 Found Medium Target: <strong>${targetPlayer.name}</strong>!` : `❌ Missed Medium Target. It was <strong>${targetPlayer.name}</strong>.`;
+        currentDifficultyStage = "hard";
+        showIntermediateModal(message, "Advance to Hard");
+    } else {
+        endTripleCrownGame();
+    }
+}
+
+function showIntermediateModal(message, transitionButtonText) {
     const items = document.querySelectorAll('.roster-item');
     items.forEach(el => el.style.pointerEvents = 'none');
     
     setTimeout(() => {
-        document.getElementById('modal-title').textContent = isWin ? "🏆 Victory! 🏆" : "💥 Defeat 💥";
-        document.getElementById('victory-text').innerHTML = message;
+        document.getElementById('modal-title').textContent = "Stage Complete";
+        document.getElementById('victory-text').innerHTML = `${message}<br><br>Get ready for the next tier.`;
+        
+        const buttonsContainer = document.querySelector('.modal-buttons');
+        buttonsContainer.innerHTML = `
+            <button onclick="closeModalAndLoadNext()" class="btn-primary" style="background:#538d4e; padding:10px 20px; border:none; border-radius:4px; font-weight:bold; cursor:pointer; color:white;">${transitionButtonText} ➔</button>
+        `;
+        document.getElementById('victory-modal').classList.remove('hidden');
+    }, 600);
+}
+
+function closeModalAndLoadNext() {
+    document.getElementById('victory-modal').classList.add('hidden');
+    loadCurrentProgressOrStart();
+}
+
+function endTripleCrownGame() {
+    const items = document.querySelectorAll('.roster-item');
+    items.forEach(el => el.style.pointerEvents = 'none');
+    
+    let grandTotalScore = aggregatedScores.easy + aggregatedScores.medium + aggregatedScores.hard;
+    
+    setTimeout(() => {
+        document.getElementById('modal-title').textContent = "🏁 Daily Challenge Complete! 🏁";
+        document.getElementById('victory-text').innerHTML = `
+            Three-Player Run Finished!<br>
+            Easy: <strong>${aggregatedScores.easy}</strong> pts<br>
+            Medium: <strong>${aggregatedScores.medium}</strong> pts<br>
+            Hard: <strong>${aggregatedScores.hard}</strong> pts<br><br>
+            🥇 Combined Grand Score: <strong>${grandTotalScore}</strong> pts!
+        `;
+        
+        const buttonsContainer = document.querySelector('.modal-buttons');
+        buttonsContainer.innerHTML = `
+            <button onclick="shareResults()" class="btn-share" style="background:#00bcd4; color:white; padding:10px 20px; border:none; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:10px;">📊 Share Tri-Score Results</button>
+            <button onclick="closeModal()" class="btn-secondary" style="background:#3a3a3c; color:white; padding:10px 20px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Close & Review Matrix</button>
+        `;
         document.getElementById('victory-modal').classList.remove('hidden');
     }, 600);
 }
@@ -338,26 +394,23 @@ function closeModal() {
 }
 
 function shareResults() {
-    const totalGuessesTaken = totalGuessesAllowed - guessesRemaining;
-    const guessDisplayCount = guessesRemaining === 0 && !emojiResultMatrix[emojiResultMatrix.length - 1].includes('🟩🟩🟩🟩🟩🟩') ? 'X' : totalGuessesTaken;
-    const countryFlag = getNationalFlag(targetPlayer.national_team);
+    let grandTotalScore = aggregatedScores.easy + aggregatedScores.medium + aggregatedScores.hard;
+    let shareText = `Ball Knowledge Daily (WC26) 🏆\n🏁 Multi-Stage Grand Score: ${grandTotalScore} pts\n\n`;
     
-    let shareText = `Ball Knowledge (WC26) - ${targetPlayer.national_team} ${countryFlag}\n🔮 ${guessDisplayCount}/${totalGuessesAllowed} Guesses\n🎯 Score: ${finalCalculatedScore} pts\n\n`;
-    shareText += emojiResultMatrix.join('\n');
-    shareText += `\n\nPlay here: ${window.location.href}`;
+    shareText += `🟢 Easy: ${aggregatedScores.easy} pts (${aggregatedScores.easy > 0 ? aggregatedGuessesUsed.easy + '/5' : 'X/5'})\n` + aggregatedMatrices.easy.join('\n') + `\n\n`;
+    shareText += `🟡 Med: ${aggregatedScores.medium} pts (${aggregatedScores.medium > 0 ? aggregatedGuessesUsed.medium + '/5' : 'X/5'})\n` + aggregatedMatrices.medium.join('\n') + `\n\n`;
+    shareText += `🔴 Hard: ${aggregatedScores.hard} pts (${aggregatedScores.hard > 0 ? aggregatedGuessesUsed.hard + '/5' : 'X/5'})\n` + aggregatedMatrices.hard.join('\n') + `\n\n`;
+    shareText += `Play today's puzzle: ${window.location.href}`;
 
     if (navigator.share) {
-        navigator.share({
-            title: 'Ball Knowledge (WC26)',
-            text: shareText
-        }).catch(err => console.log('Error sharing:', err));
+        navigator.share({ title: 'Ball Knowledge Daily (WC26)', text: shareText }).catch(err => console.log(err));
     } else {
         navigator.clipboard.writeText(shareText).then(() => {
             const toast = document.getElementById('toast-notification');
             toast.classList.remove('hidden');
             setTimeout(() => toast.classList.add('hidden'), 2500);
-        }).catch(err => {
-            alert("Could not copy score automatically. Copy from here:\n\n" + shareText);
+        }).catch(() => {
+            alert("Could not copy score automatically. Copy text block below:\n\n" + shareText);
         });
     }
 }

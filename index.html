@@ -10,13 +10,25 @@
     <div id="layout-container">
         <div id="game-pane">
             <header>
-                <h1>Ball Knowledge (WC26)</h1>
+                <h1 class="main-title">BALL KNOWLEDGE</h1>
+                
+                <!-- Highly Visual Separate Mode Badge Frame -->
+                <div id="difficulty-badge-container">
+                    <span id="difficulty-level-tag">LOADING STAGE...</span>
+                </div>
+
                 <div id="target-country-container">
                     <h2 id="target-country-clue">Target Nation: Loading...</h2>
                 </div>
+
                 <div id="status-bar">
                     <span>Guesses Left: <strong id="guesses-left">5</strong></span> | 
                     <span>Current Max Value: <strong id="potential-score">0</strong> pts</span>
+                </div>
+                
+                <!-- Bulletproof Real-Time Tracking Frame -->
+                <div id="visitor-counter-wrapper">
+                    <div id="visitor-count-display"></div>
                 </div>
             </header>
 
@@ -30,17 +42,10 @@
             </div>
 
             <div id="guess-grid"></div>
-
-            <form id="guess-form">
-                <h3>Guess the Player from the Team Sheet:</h3>
-                <div class="form-row">
-                    <div class="autocomplete-wrapper">
-                        <input type="text" id="input-name" placeholder="Type player name..." autocomplete="off" required>
-                        <div id="name-autofill-list" class="autofill-dropdown"></div>
-                    </div>
-                    <button type="submit" id="submit-btn">Submit</button>
-                </div>
-            </form>
+            
+            <div id="action-hint-banner" style="background:#1a1a1c; border: 2px dashed #00bcd4; padding: 15px; text-align:center; border-radius:8px; margin-top:20px;">
+                <span style="color:#00bcd4; font-weight:bold; text-transform:uppercase; font-size:0.9rem; letter-spacing:0.5px;">👉 Select a player from the team sheet menu to submit a guess!</span>
+            </div>
         </div>
 
         <div id="roster-pane">
@@ -50,23 +55,14 @@
 
         <div id="instructions-pane">
             <h3>How to Play</h3>
-            <p>Guess the hidden World Cup player from the team sheet! <strong>Tip: You can click on any player in the Team Sheet to guess them instantly.</strong></p>
+            <p>Complete three challenges everyday: **Easy, Medium, and Hard**. Click directly on any active player from the sorted Team Sheet menu to trace their attributes against the secret targets!</p>
             
             <h4>Color Guide:</h4>
             <ul>
                 <li><span class="badge correct">Green</span> Exact match.</li>
-                <li><span class="badge partial">Yellow</span> Shared attribute or close variance:
-                    <ul>
-                        <li><strong>Club/Country:</strong> Same domestic league country.</li>
-                        <li><strong>Age:</strong> Within ±2 years.</li>
-                        <li><strong>Height:</strong> Within ±5 cm.</li>
-                        <li><strong>Caps:</strong> Within ±10 appearances.</li>
-                    </ul>
-                </li>
+                <li><span class="badge partial">Yellow</span> Shared attribute or close variance.</li>
                 <li><span class="badge incorrect">Red</span> No match / outside range.</li>
             </ul>
-            <h4>Directional Arrows:</h4>
-            <p>The symbols <strong>↑</strong> and <strong>↓</strong> mean the target player's stats are higher or lower than your guess.</p>
         </div>
     </div>
 
@@ -76,14 +72,41 @@
         <div class="modal-content">
             <h2 id="modal-title">🎉 Game Over 🎉</h2>
             <p id="victory-text"></p>
-            <div class="modal-buttons">
-                <button onclick="shareResults()" class="btn-share">📊 Share Results</button>
-                <button onclick="location.reload()" class="btn-primary">Play Again</button>
-                <button onclick="closeModal()" class="btn-secondary">Review Board</button>
-            </div>
+            <div class="modal-buttons"></div>
         </div>
     </div>
 
     <script src="app.js"></script>
+    
+    <!-- Restructured Multi-Platform Safe Analytics Engine Hook -->
+    <script>
+        (async function fetchLiveViews() {
+            const displayEl = document.getElementById('visitor-count-display');
+            // Utilizing a secure, high-uptime public hit counter service instance
+            const trackingEndpoint = 'https://api.scrimba.com/counters/ballknowledge_wc26_total_hits/hit';
+            
+            try {
+                const response = await fetch(trackingEndpoint, { method: 'POST' });
+                if (!response.ok) {
+                    // Try alternative open-endpoint proxy if first route is strict or ad-blocked
+                    const altRes = await fetch('https://api.counterapi.dev/v1/ballknowledge_wc26/counter/up');
+                    const altData = await altRes.json();
+                    if(altData && altData.count) {
+                        displayEl.textContent = `👀 TOTAL VIEWS: ${Number(altData.count).toLocaleString()}`;
+                        return;
+                    }
+                }
+                const data = await response.json();
+                if (data && typeof data.value !== 'undefined') {
+                    displayEl.textContent = `👀 TOTAL VIEWS: ${Number(data.value).toLocaleString()}`;
+                } else if (data && data.count) {
+                    displayEl.textContent = `👀 TOTAL VIEWS: ${Number(data.count).toLocaleString()}`;
+                }
+            } catch (err) {
+                // Simple fallback to keep space clean if tracking domain fails or visitor blocks all tracking
+                displayEl.textContent = `🏆 PLAYING LIVE CHALLENGE`;
+            }
+        })();
+    </script>
 </body>
 </html>

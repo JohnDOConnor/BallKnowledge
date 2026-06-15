@@ -302,3 +302,71 @@ header h2 .flag-emoji {
         font-size: 2rem;
     }
 }
+
+/* Custom Action Interaction Callout Styles */
+#action-hint-banner {
+    animation: blueprintPulse 2s infinite ease-in-out;
+}
+
+@keyframes blueprintPulse {
+    0% {
+        border-color: #00bcd4;
+        box-shadow: 0 0 4px rgba(0, 188, 212, 0.2);
+    }
+    50% {
+        border-color: #538d4e;
+        box-shadow: 0 0 12px rgba(83, 141, 78, 0.5);
+    }
+    100% {
+        border-color: #00bcd4;
+        box-shadow: 0 0 4px rgba(0, 188, 212, 0.2);
+    }
+}
+
+/* --- High-Contrast Difficulty Stage Badges --- */
+#difficulty-badge-container {
+    text-align: center;
+    margin-bottom: 12px;
+    margin-top: 5px;
+}
+
+#difficulty-level-tag {
+    background-color: #1e1e1f;
+    font-weight: 900;
+    font-size: 0.9rem;
+    letter-spacing: 1.5px;
+    padding: 6px 18px;
+    border-radius: 30px;
+    border: 2px solid #3a3a3c;
+    text-transform: uppercase;
+    display: inline-block;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+    transition: all 0.3s ease;
+}
+
+/* Specific Stage Color Definitions */
+#difficulty-level-tag.stage-easy {
+    color: #00bcd4;
+    border-color: #00bcd4;
+    text-shadow: 0 0 6px rgba(0, 188, 212, 0.4);
+}
+
+#difficulty-level-tag.stage-medium {
+    color: #ffb300;
+    border-color: #ffb300;
+    text-shadow: 0 0 6px rgba(255, 179, 0, 0.4);
+}
+
+#difficulty-level-tag.stage-hard {
+    color: #ff3b30;
+    border-color: #ff3b30;
+    text-shadow: 0 0 6px rgba(255, 59, 48, 0.4);
+}
+
+/* Visitor Counter View Layout */
+#visitor-count-display {
+    font-size: 0.85rem;
+    color: #8e8e93;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
