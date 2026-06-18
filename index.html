@@ -10,25 +10,35 @@
     <div id="layout-container">
         <div id="game-pane">
             <header>
-                <h1 class="main-title">BALL KNOWLEDGE</h1>
+                <div class="header-top-bar">
+                    <div class="logo-container">
+                        <img src="title.png" alt="Ball Knowledge Logo" class="main-logo">
+                    </div>
+                </div>
                 
-                <!-- Highly Visual Separate Mode Badge Frame -->
+                <!-- Permanent 3-Column Stage Progression Row Tracker -->
                 <div id="difficulty-badge-container">
-                    <span id="difficulty-level-tag">LOADING STAGE...</span>
+                    <div class="progress-tracker-row">
+                        <div id="tag-easy" class="prog-tag stage-easy" onclick="inspectHistoricStage('easy')">EASY</div>
+                        <div id="tag-medium" class="prog-tag stage-medium" onclick="inspectHistoricStage('medium')">MEDIUM</div>
+                        <div id="tag-hard" class="prog-tag stage-hard" onclick="inspectHistoricStage('hard')">HARD</div>
+                    </div>
                 </div>
 
+                <!-- Fully Centered Minimalist Combined Banner Container -->
                 <div id="target-country-container">
-                    <h2 id="target-country-clue">Target Nation: Loading...</h2>
-                </div>
-
-                <div id="status-bar">
-                    <span>Guesses Left: <strong id="guesses-left">5</strong></span> | 
-                    <span>Current Max Value: <strong id="potential-score">0</strong> pts</span>
-                </div>
-                
-                <!-- Bulletproof Real-Time Tracking Frame -->
-                <div id="visitor-counter-wrapper">
-                    <div id="visitor-count-display"></div>
+                    <div class="target-center-content">
+                        <h2 id="target-country-clue">Loading...</h2>
+                        <div id="minimal-status-bar">
+                            <span>Guesses Left: <strong id="guesses-left">5</strong></span>
+                            <span class="status-divider">•</span>
+                            <span>Max Value: <strong id="potential-score">0</strong> pts</span>
+                        </div>
+                    </div>
+                    <!-- Minimalist text-rendered "i" button to eliminate system blue emojis -->
+                    <button id="info-trigger-btn" onclick="toggleInstructionsModal()" aria-label="How to play">
+                        <span class="info-icon-text">i</span>
+                    </button>
                 </div>
             </header>
 
@@ -42,71 +52,43 @@
             </div>
 
             <div id="guess-grid"></div>
-            
-            <div id="action-hint-banner" style="background:#1a1a1c; border: 2px dashed #00bcd4; padding: 15px; text-align:center; border-radius:8px; margin-top:20px;">
-                <span style="color:#00bcd4; font-weight:bold; text-transform:uppercase; font-size:0.9rem; letter-spacing:0.5px;">👉 Select a player from the team sheet menu to submit a guess!</span>
-            </div>
         </div>
 
         <div id="roster-pane">
-            <h3 id="roster-title">Team Sheet</h3>
+            <h3 id="roster-title">Tap to guess!</h3>
             <div id="roster-list"></div>
         </div>
+    </div>
 
-        <div id="instructions-pane">
+    <!-- Instructions Overlay Modal -->
+    <div id="instructions-modal" class="modal hidden">
+        <div class="modal-content standard-overlay">
             <h3>How to Play</h3>
-            <p>Complete three challenges everyday: **Easy, Medium, and Hard**. Click directly on any active player from the sorted Team Sheet menu to trace their attributes against the secret targets!</p>
+            <p>Complete three challenges everyday: Easy, Medium, and Hard. Click directly on any active player from the sorted Team Sheet menu to trace their attributes against the secret targets!</p>
             
             <h4>Color Guide:</h4>
-            <ul>
+            <ul class="modal-info-list">
                 <li><span class="badge correct">Green</span> Exact match.</li>
                 <li><span class="badge partial">Yellow</span> Shared attribute or close variance.</li>
                 <li><span class="badge incorrect">Red</span> No match / outside range.</li>
             </ul>
+            <div class="modal-buttons">
+                <button onclick="toggleInstructionsModal()" class="btn-secondary">Close Rules</button>
+            </div>
         </div>
     </div>
 
-    <div id="toast-notification" class="toast hidden">Copied score to clipboard!</div>
+    <div id="toast-notification" class="toast hidden">Copied!</div>
 
+    <!-- Victory/Stage Modal -->
     <div id="victory-modal" class="modal hidden">
         <div class="modal-content">
-            <h2 id="modal-title">🎉 Game Over 🎉</h2>
+            <h2 id="modal-title">🏁 Game Over 🏁</h2>
             <p id="victory-text"></p>
-            <div class="modal-buttons"></div>
+            <div class="modal-buttons" id="modal-actions-container"></div>
         </div>
     </div>
 
     <script src="app.js"></script>
-    
-    <!-- Restructured Multi-Platform Safe Analytics Engine Hook -->
-    <script>
-        (async function fetchLiveViews() {
-            const displayEl = document.getElementById('visitor-count-display');
-            // Utilizing a secure, high-uptime public hit counter service instance
-            const trackingEndpoint = 'https://api.scrimba.com/counters/ballknowledge_wc26_total_hits/hit';
-            
-            try {
-                const response = await fetch(trackingEndpoint, { method: 'POST' });
-                if (!response.ok) {
-                    // Try alternative open-endpoint proxy if first route is strict or ad-blocked
-                    const altRes = await fetch('https://api.counterapi.dev/v1/ballknowledge_wc26/counter/up');
-                    const altData = await altRes.json();
-                    if(altData && altData.count) {
-                        displayEl.textContent = `👀 TOTAL VIEWS: ${Number(altData.count).toLocaleString()}`;
-                        return;
-                    }
-                }
-                const data = await response.json();
-                if (data && typeof data.value !== 'undefined') {
-                    displayEl.textContent = `👀 TOTAL VIEWS: ${Number(data.value).toLocaleString()}`;
-                } else if (data && data.count) {
-                    displayEl.textContent = `👀 TOTAL VIEWS: ${Number(data.count).toLocaleString()}`;
-                }
-            } catch (err) {
-                // Simple fallback to keep space clean if tracking domain fails or visitor blocks all tracking
-                displayEl.textContent = `🏆 PLAYING LIVE CHALLENGE`;
-            }
-        })();
-    </script>
 </body>
 </html>

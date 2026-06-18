@@ -1,6 +1,7 @@
 let playersDatabase = [];
 let dailyTargets = { easy: null, medium: null, hard: null };
 let currentDifficultyStage = "easy"; 
+let gameOverCrownComplete = false;
 
 let nationalRoster = []; 
 let guessesRemaining = 5;
@@ -11,73 +12,25 @@ let aggregatedScores = { easy: 0, medium: 0, hard: 0 };
 let aggregatedMatrices = { easy: [], medium: [], hard: [] };
 let aggregatedGuessesUsed = { easy: 0, medium: 0, hard: 0 };
 
+// Caches row logs to toggle grid lookbacks on user review clicks
+let runtimeHtmlRowsRecord = { easy: [], medium: [], hard: [] };
+
 const positionOrder = ["GK", "DF", "MF", "FW"];
 
 const countryToFlagMap = {
-    "Austria": "🇦🇹",
-    "Belgium": "🇧🇪",
-    "Croatia": "🇭🇷",
-    "Denmark": "🇩🇰",
-    "England": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-    "France": "🇫🇷",
-    "Germany": "🇩🇪",
-    "Italy": "🇮🇹",
-    "Netherlands": "🇳🇱",
-    "Portugal": "🇵🇹",
-    "Serbia": "🇷🇸",
-    "Spain": "🇪🇸",
-    "Switzerland": "🇨🇭",
-    "Ukraine": "🇺🇦",
-    "Poland": "🇵🇱",
-    "Scotland": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-    "Argentina": "🇦🇷",
-    "Brazil": "🇧🇷",
-    "Chile": "🇨🇱",
-    "Colombia": "🇨🇴",
-    "Ecuador": "🇪🇨",
-    "Paraguay": "🇵🇾",
-    "Peru": "🇵🇪",
-    "Uruguay": "🇺🇾",
-    "Venezuela": "🇻🇪",
-    "Canada": "🇨🇦",
-    "Costa Rica": "🇨🇷",
-    "Honduras": "🇭🇳",
-    "Jamaica": "🇯🇲",
-    "Mexico": "🇲🇽",
-    "Panama": "🇵🇦",
-    "United States": "🇺🇸",
-    "Algeria": "🇩🇿",
-    "Cameroan": "🇨🇲", 
-    "Cameroon": "🇨🇲", 
-    "Egypt": "🇪🇬",
-    "Ghana": "🇬🇭",
-    "Ivory Coast": "🇨🇮",
-    "Morocco": "🇲🇦",
-    "Nigeria": "🇳🇬",
-    "Senegal": "🇸🇳",
-    "Tunisia": "🇹🇳",
-    "South Africa": "🇿🇦",
-    "Australia": "🇦🇺",
-    "IR Iran": "🇮🇷",
-    "Iraq": "🇮🇶",
-    "Japan": "🇯🇵",
-    "Qatar": "🇶🇦",
-    "Saudi Arabia": "🇸🇦",
-    "South Korea": "🇰🇷",
-    "Uzbekistan": "🇺🇿",
-    "New Zealand": "🇳🇿",
-    "Norway": "🇳🇴",
-    "Türkiye": "🇹🇷",
-    "Curaçao": "🇨🇼",
-    "Congo DR": "🇨🇩",
-    "Czechia": "🇨🇿",
-    "Bosnia And Herzegovina": "🇧🇦",
-    "Haiti": "🇭🇹",
-    "Korea Republic": "🇰🇷",
-    "Jordan": "🇯🇴",
-    "Sweden": "🇸🇪",
-    "USA": "🇺🇸",
-    "Cabo Verde": "🇨🇻"
+    "Austria": "🇦🇹", "Belgium": "🇧🇪", "Croatia": "🇭🇷", "Denmark": "🇩🇰", "England": "🏴",
+    "France": "🇫🇷", "Germany": "🇩🇪", "Italy": "🇮🇹", "Netherlands": "🇳🇱", "Portugal": "🇵🇹",
+    "Serbia": "🇷🇸", "Spain": "🇪🇸", "Switzerland": "🇨🇭", "Ukraine": "🇺🇦", "Poland": "🇵🇱",
+    "Scotland": "🏴", "Argentina": "🇦🇷", "Brazil": "🇧🇷", "Chile": "🇨🇱", "Colombia": "🇨🇴",
+    "Ecuador": "🇪🇨", "Paraguay": "🇵🇾", "Peru": "🇵🇪", "Uruguay": "🇺🇾", "Venezuela": "🇻🇪",
+    "Canada": "🇨🇦", "Costa Rica": "🇨🇷", "Honduras": "🇭🇳", "Jamaica": "🇯🇲", "Mexico": "🇲🇽",
+    "Panama": "🇵🇦", "United States": "🇺🇸", "Algeria": "🇩🇿", "Cameroon": "🇨🇲",
+    "Egypt": "🇪🇬", "Ghana": "🇬🇭", "Ivory Coast": "🇨🇮", "Morocco": "🇲🇦", "Nigeria": "🇳🇬",
+    "Senegal": "🇸🇳", "Tunisia": "🇹🇳", "South Africa": "🇿🇦", "Australia": "🇦🇺", "IR Iran": "🇮🇷",
+    "Iraq": "🇮🇶", "Japan": "🇯🇵", "Qatar": "🇶🇦", "Saudi Arabia": "🇸🇦", "South Korea": "🇰🇷",
+    "Uzbekistan": "🇺🇿", "New Zealand": "🇳🇿", "Norway": "🇳🇴", "Türkiye": "🇹🇷", "Curaçao": "🇨🇼",
+    "Congo DR": "🇨🇩", "Czechia": "🇨🇿", "Bosnia And Herzegovina": "🇧🇦", "Haiti": "🇭🇹",
+    "Jordan": "🇯🇴", "Sweden": "🇸🇪", "USA": "🇺🇸", "Cabo Verde": "🇨🇻"
 };
 
 function getNationalFlag(countryName) {
@@ -115,17 +68,31 @@ function generateDailyTargets() {
     dailyTargets.hard = hardPool[getDailySeededIndex(dateStamp + "-HARD", hardPool.length)] || playersDatabase[0];
 }
 
+function toggleInstructionsModal() {
+    const infoModal = document.getElementById('instructions-modal');
+    infoModal.classList.toggle('hidden');
+}
+
+function synchronizeTrackerVisualStates() {
+    const stages = ["easy", "medium", "hard"];
+    stages.forEach(stg => {
+        const el = document.getElementById(`tag-${stg}`);
+        el.classList.remove('active-challenge', 'can-inspect');
+        if (stg === currentDifficultyStage) {
+            el.classList.add('active-challenge');
+        }
+        if (gameOverCrownComplete) {
+            el.classList.add('can-inspect');
+        }
+    });
+}
+
 function loadCurrentProgressOrStart() {
     document.getElementById('guess-grid').innerHTML = '';
     guessesRemaining = totalGuessesAllowed;
+    synchronizeTrackerVisualStates();
 
     let targetPlayer = dailyTargets[currentDifficultyStage];
-    
-    // UI Layout Synchronization: Isolates difficulty styling from the target country element block
-    const badgeTag = document.getElementById('difficulty-level-tag');
-    badgeTag.className = ""; // Wipe older configuration tracking states cleanly
-    badgeTag.classList.add(`stage-${currentDifficultyStage}`);
-    badgeTag.textContent = `${currentDifficultyStage.toUpperCase()} CHALLENGE`;
     
     if (currentDifficultyStage === "easy") {
         baseDifficultyPoints = 1000;
@@ -137,11 +104,9 @@ function loadCurrentProgressOrStart() {
 
     const countryFlag = getNationalFlag(targetPlayer.national_team);
     document.getElementById('target-country-clue').innerHTML = `
-        <span>Target Nation: ${targetPlayer.national_team}</span> 
+        <span>${targetPlayer.national_team}</span> 
         <span class="flag-emoji">${countryFlag}</span>
     `;
-    
-    document.getElementById('roster-title').textContent = `${targetPlayer.national_team} Team Sheet`;
     
     nationalRoster = playersDatabase.filter(p => p.national_team === targetPlayer.national_team);
     
@@ -150,9 +115,32 @@ function loadCurrentProgressOrStart() {
     triggerInitialWrongGuess();
 }
 
+function inspectHistoricStage(selectedStage) {
+    if (!gameOverCrownComplete) return;
+    currentDifficultyStage = selectedStage;
+    synchronizeTrackerVisualStates();
+    
+    let targetPlayer = dailyTargets[selectedStage];
+    const countryFlag = getNationalFlag(targetPlayer.national_team);
+    document.getElementById('target-country-clue').innerHTML = `
+        <span>${targetPlayer.national_team}</span> 
+        <span class="flag-emoji">${countryFlag}</span>
+    `;
+    
+    const grid = document.getElementById('guess-grid');
+    grid.innerHTML = '';
+    runtimeHtmlRowsRecord[selectedStage].forEach(rowClone => {
+        grid.appendChild(rowClone.cloneNode(true));
+    });
+
+    document.getElementById('guesses-left').textContent = totalGuessesAllowed - aggregatedGuessesUsed[selectedStage];
+    document.getElementById('potential-score').textContent = aggregatedScores[selectedStage];
+}
+
 function renderRosterSidebar() {
     const rosterList = document.getElementById('roster-list');
     rosterList.innerHTML = '';
+    if (gameOverCrownComplete) return;
     
     const sortedRoster = [...nationalRoster].sort((a, b) => {
         let orderA = positionOrder.indexOf(a.position);
@@ -166,8 +154,8 @@ function renderRosterSidebar() {
         item.className = 'roster-item';
         item.innerHTML = `<span>${player.name}</span> <span class="roster-pos">${player.position}</span>`;
         
-        item.addEventListener('click', () => {
-            if (guessesRemaining <= 0) return;
+        item.addEventListener('click', function handlesRosterClick() {
+            if (guessesRemaining <= 0 || gameOverCrownComplete) return;
             evaluateCustomGuess(player, true);
             window.scrollTo({ top: 0, behavior: 'smooth' });
         });
@@ -176,11 +164,9 @@ function renderRosterSidebar() {
     });
 }
 
-// FIXED: Calendar date seeding guarantees every user globally shares the exact same initial hint row
 function triggerInitialWrongGuess() {
     let targetPlayer = dailyTargets[currentDifficultyStage];
     
-    // Explicitly sort alphabetically to prevent raw variations across server processing environments
     const deterministicWrongOptions = nationalRoster
         .filter(p => p.name.toUpperCase() !== targetPlayer.name.toUpperCase())
         .sort((a, b) => a.name.localeCompare(b.name));
@@ -189,7 +175,6 @@ function triggerInitialWrongGuess() {
         const today = new Date();
         const firstRowSeedString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}-${currentDifficultyStage}-FIRST_LINE_HINT`;
         
-        // Pick the same wrong player index based on the calculated date seed
         const targetStaticIndex = getDailySeededIndex(firstRowSeedString, deterministicWrongOptions.length);
         const dailyIdenticalWrongPlayer = deterministicWrongOptions[targetStaticIndex];
         
@@ -211,7 +196,7 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
 
     let rowEmojis = [];
 
-    // 1. Name Tile
+    // Name
     const nameTile = document.createElement('div');
     const isNameCorrect = guess.name.toUpperCase() === targetPlayer.name.toUpperCase();
     nameTile.className = 'tile ' + (isNameCorrect ? 'correct' : 'incorrect');
@@ -219,7 +204,7 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     row.appendChild(nameTile);
     rowEmojis.push(isNameCorrect ? '🟩' : '🟥');
 
-    // 2. Position Tile
+    // Position
     const posTile = document.createElement('div');
     const isPosCorrect = guess.position === targetPlayer.position;
     posTile.className = 'tile ' + (isPosCorrect ? 'correct' : 'incorrect');
@@ -227,7 +212,7 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     row.appendChild(posTile);
     rowEmojis.push(isPosCorrect ? '🟩' : '🟥');
 
-    // 3. Club / Country Tile
+    // Club
     const clubTile = document.createElement('div');
     const isClubCorrect = guess.club.toUpperCase() === targetPlayer.club.toUpperCase();
     const isLeagueCorrect = guess.league_country && targetPlayer.league_country && (guess.league_country.toUpperCase() === targetPlayer.league_country.toUpperCase());
@@ -245,7 +230,7 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     clubTile.textContent = guess.club;
     row.appendChild(clubTile);
 
-    // 4. Age Tile
+    // Age
     const ageTile = document.createElement('div');
     const ageDiff = Math.abs(guess.age - targetPlayer.age);
     let ageArrow = guess.age < targetPlayer.age ? ' ↑' : ' ↓';
@@ -264,7 +249,7 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     }
     row.appendChild(ageTile);
 
-    // 5. Height Tile
+    // Height
     const heightTile = document.createElement('div');
     const heightDiff = Math.abs(guess.height_cm - targetPlayer.height_cm);
     let heightArrow = guess.height_cm < targetPlayer.height_cm ? ' ↑' : ' ↓';
@@ -283,7 +268,7 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     }
     row.appendChild(heightTile);
 
-    // 6. Caps Tile
+    // Caps
     const capsTile = document.createElement('div');
     const capsDiff = Math.abs(guess.caps - targetPlayer.caps);
     let capsArrow = guess.caps < targetPlayer.caps ? ' ↑' : ' ↓';
@@ -303,6 +288,7 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     row.appendChild(capsTile);
 
     grid.appendChild(row);
+    runtimeHtmlRowsRecord[currentDifficultyStage].push(row.cloneNode(true));
 
     if (!countAsActiveGuess) return;
 
@@ -343,54 +329,52 @@ function processStageResolution(isWin) {
     }
 }
 
-function showIntermediateModal(message, transitionButtonText) {
-    const items = document.querySelectorAll('.roster-item');
-    items.forEach(el => el.style.pointerEvents = 'none');
-    
-    setTimeout(() => {
-        document.getElementById('modal-title').textContent = "Stage Complete";
-        document.getElementById('victory-text').innerHTML = `${message}<br><br>Get ready for the next tier.`;
-        
-        const buttonsContainer = document.querySelector('.modal-buttons');
-        buttonsContainer.innerHTML = `
-            <button onclick="closeModalAndLoadNext()" class="btn-primary" style="background:#538d4e; padding:10px 20px; border:none; border-radius:4px; font-weight:bold; cursor:pointer; color:white;">${transitionButtonText} ➔</button>
-        `;
-        document.getElementById('victory-modal').classList.remove('hidden');
-    }, 600);
-}
-
-function closeModalAndLoadNext() {
+function executeModalAdvance() {
     document.getElementById('victory-modal').classList.add('hidden');
     loadCurrentProgressOrStart();
 }
 
+function closeModal() {
+    document.getElementById('victory-modal').classList.add('hidden');
+}
+
+function showIntermediateModal(message, transitionButtonText) {
+    document.getElementById('modal-title').textContent = "Stage Complete";
+    document.getElementById('victory-text').innerHTML = `${message}<br><br>Get ready for the next tier.`;
+    
+    const actionsWrapper = document.getElementById('modal-actions-container');
+    actionsWrapper.innerHTML = `
+        <button onclick="executeModalAdvance()" class="btn-primary" style="background:#407a44; color:white; padding:11px; font-size:0.95rem; border:none; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">${transitionButtonText} ➔</button>
+    `;
+
+    document.getElementById('victory-modal').classList.remove('hidden');
+}
+
 function endTripleCrownGame() {
-    const items = document.querySelectorAll('.roster-item');
-    items.forEach(el => el.style.pointerEvents = 'none');
+    gameOverCrownComplete = true;
+    currentDifficultyStage = "hard";
+    synchronizeTrackerVisualStates();
+    renderRosterSidebar();
     
     let grandTotalScore = aggregatedScores.easy + aggregatedScores.medium + aggregatedScores.hard;
     
-    setTimeout(() => {
-        document.getElementById('modal-title').textContent = "🏁 Daily Challenge Complete! 🏁";
-        document.getElementById('victory-text').innerHTML = `
-            Three-Player Run Finished!<br>
-            Easy: <strong>${aggregatedScores.easy}</strong> pts<br>
-            Medium: <strong>${aggregatedScores.medium}</strong> pts<br>
-            Hard: <strong>${aggregatedScores.hard}</strong> pts<br><br>
-            🥇 Combined Grand Score: <strong>${grandTotalScore}</strong> pts!
-        `;
-        
-        const buttonsContainer = document.querySelector('.modal-buttons');
-        buttonsContainer.innerHTML = `
-            <button onclick="shareResults()" class="btn-share" style="background:#00bcd4; color:white; padding:10px 20px; border:none; border-radius:4px; font-weight:bold; cursor:pointer; margin-right:10px;">📊 Share Tri-Score Results</button>
-            <button onclick="closeModal()" class="btn-secondary" style="background:#3a3a3c; color:white; padding:10px 20px; border:none; border-radius:4px; font-weight:bold; cursor:pointer;">Close & Review Matrix</button>
-        `;
-        document.getElementById('victory-modal').classList.remove('hidden');
-    }, 600);
-}
+    document.getElementById('modal-title').textContent = "Daily Challenge Complete!";
+    document.getElementById('victory-text').innerHTML = `
+        Three-Player Run Finished!<br>
+        Easy: <strong>${aggregatedScores.easy}</strong> pts<br>
+        Medium: <strong>${aggregatedScores.medium}</strong> pts<br>
+        Hard: <strong>${aggregatedScores.hard}</strong> pts<br><br>
+        🥇 Combined Grand Score: <strong>${grandTotalScore}</strong> pts!<br><br>
+        <em>Review Tip: Tap the row tags at the top anytime to view your easy & medium boards.</em>
+    `;
+    
+    const actionsWrapper = document.getElementById('modal-actions-container');
+    actionsWrapper.innerHTML = `
+        <button onclick="shareResults()" class="btn-share" style="background:#2d5a27; color:white; padding:11px; font-size:0.95rem; border:none; border-radius:5px; font-weight:bold; cursor:pointer; width:100%; margin-bottom:8px;">📊 Share Results</button>
+        <button onclick="closeModal()" class="btn-secondary" style="background:#e6eee6; color:#1b3322; padding:11px; font-size:0.95rem; border:1px solid #a3c6a3; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">Close & Review Boards</button>
+    `;
 
-function closeModal() {
-    document.getElementById('victory-modal').classList.add('hidden');
+    document.getElementById('victory-modal').classList.remove('hidden');
 }
 
 function shareResults() {
