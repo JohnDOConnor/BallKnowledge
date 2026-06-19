@@ -1,6 +1,6 @@
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background-image: url('background.png');
+    background-image: linear-gradient(rgba(219, 238, 219, 0.8), rgba(219, 238, 219, 0.8)), url('background.png');
     background-color: #dbeedb; 
     background-attachment: fixed;
     background-position: center;
@@ -219,9 +219,25 @@ header h2 .flag-emoji {
     line-height: 1.2;
 }
 
-.correct { background-color: #407a44 !important; border-color: #407a44 !important; color: #ffffff !important; }
-.partial { background-color: #c9aa22 !important; border-color: #c9aa22 !important; color: #ffffff !important; }
-.incorrect { background-color: #c93b3b !important; border-color: #c93b3b !important; color: #ffffff !important; }
+/* --- UPDATE THESE BLOCKS IN style.css --- */
+
+.correct {
+    /* Soft Sage Green */
+    background-color: rgba(46, 117, 89, 0.82) !important;
+    color: #ffffff;
+}
+
+.partial {
+    /* Muted Mustard Yellow */
+    background-color: rgba(212, 160, 23, 0.85) !important;
+    color: #ffffff; 
+}
+
+.incorrect {
+    /* Faded Terracotta Red */
+    background-color: rgba(186, 68, 68, 0.82) !important;
+    color: #ffffff;
+}
 
 #roster-pane {
     background-color: #fdfbf7; 

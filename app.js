@@ -125,11 +125,14 @@ function loadCurrentProgressOrStart() {
         grid.appendChild(placeholder);
     }
 
+// --- UPDATE THIS BLOCK (At the very end of loadCurrentProgressOrStart) ---
     renderRosterSidebar();
     updateStatusUI();
     
-    // Trigger the initial wrong guess hint (this takes over row-slot-0, leaving exactly 5 blank rows visible)
-    triggerInitialWrongGuess();
+    // Trigger the initial wrong guess hint after a 1-second (1000ms) delay
+    setTimeout(() => {
+        triggerInitialWrongGuess();
+    }, 1000); 
 }
 
 function inspectHistoricStage(selectedStage) {
