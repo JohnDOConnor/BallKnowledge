@@ -31,7 +31,7 @@ const countryToFlagMap = {
     "Panama": "🇵🇦", "United States": "🇺🇸", "Algeria": "🇩🇿", "Cameroon": "🇨🇲",
     "Egypt": "🇪🇬", "Ghana": "🇬🇭", "Ivory Coast": "🇨🇮", "Morocco": "🇲🇦", "Nigeria": "🇳🇬",
     "Senegal": "🇸🇳", "Tunisia": "🇹🇳", "South Africa": "🇿🇦", "Australia": "🇦🇺", "IR Iran": "🇮🇷",
-    "Iraq": "🇮🇶", "Japan": "🇯🇵", "Qatar": "🇶🇦", "Saudi Arabia": "🇸🇦", "South Korea": "🇰🇷",
+    "Iraq": "🇮🇶", "Japan": "🇯🇵", "Qatar": "🇶🇦", "Saudi Arabia": "🇸🇦", "Korea Republic": "🇰🇷",
     "Uzbekistan": "🇺🇿", "New Zealand": "🇳🇿", "Norway": "🇳🇴", "Türkiye": "🇹🇷", "Curaçao": "🇨🇼",
     "Congo DR": "🇨🇩", "Czechia": "🇨🇿", "Bosnia And Herzegovina": "🇧🇦", "Haiti": "🇭🇹",
     "Jordan": "🇯🇴", "Sweden": "🇸🇪", "USA": "🇺🇸", "Cabo Verde": "🇨🇻"
