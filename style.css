@@ -2,7 +2,7 @@ body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     /* Soft 92% opaque Slate-Grey sheet over your image */
 	/* background-image: linear-gradient(rgba(233, 61, 3, 0.93), rgba(251, 177, 3, 0.93));*/	
-    background-color: rgba(251, 177, 3, 0.5); 
+    background-color: rgba(251, 177, 3, 0.8); 
     background-attachment: fixed;
     background-position: center;
     background-size: cover;
