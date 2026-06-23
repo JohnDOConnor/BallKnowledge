@@ -17,67 +17,83 @@
 </head>
 <body>
     <div id="layout-container">
-        <div id="game-pane">
-            <header>
-                <div class="header-top-bar">
-                    <div class="logo-container">
-                        <img src="title.png" alt="Ball Knowledge Logo" class="main-logo">
-                    </div>
-                </div>
-                
-                <div id="difficulty-badge-container">
-                    <div class="progress-tracker-row">
-                        <div id="tag-easy" class="prog-tag stage-easy" onclick="inspectHistoricStage('easy')">EASY</div>
-                        <div id="tag-medium" class="prog-tag stage-medium" onclick="inspectHistoricStage('medium')">MEDIUM</div>
-                        <div id="tag-hard" class="prog-tag stage-hard" onclick="inspectHistoricStage('hard')">HARD</div>
-                    </div>
-                </div>
-
-                <div id="target-country-container">
-                    <div class="target-center-content">
-                        <h2 id="target-country-clue">Loading...</h2>
-                        <div id="minimal-status-bar">
-                            <span>Guesses Left: <strong id="guesses-left">5</strong></span>
-                            <span class="status-divider">•</span>
-                            <span>Max Value: <strong id="potential-score">0</strong> pts</span>
-                        </div>
-                    </div>
-                    <button id="info-trigger-btn" onclick="toggleInstructionsModal()" aria-label="How to play">
-                        <span class="info-icon-text">i</span>
-                    </button>
-                </div>
-            </header>
-
-            <div class="grid-header">
-                <div>Name</div>
-                <div>Pos</div>
-                <div>Club</div>
-                <div>Age</div>
-                <div>Hgt (cm)</div>
-                <div>Caps</div>
-            </div>
-
-            <div id="guess-grid"></div>
+        
+        <!-- Permanent Mode Switcher -->
+        <div id="mode-switcher-container">
+            <button id="btn-mode-daily" class="mode-toggle-btn active-mode" onclick="switchGameMode('daily')">📅 Daily Challenge</button>
+            <button id="btn-mode-free" class="mode-toggle-btn" onclick="switchGameMode('free')">🌍 Free Play Mode</button>
         </div>
 
-        <div id="roster-pane">
-            <h3 id="roster-title">Tap to guess!</h3>
-            <div class="roster-columns-wrapper">
-                <div class="pos-column">
-                    <div class="column-header">GK</div>
-                    <div id="roster-list-GK" class="column-list"></div>
+        <!-- NEW: Country Selection Grid View System -->
+        <div id="country-select-screen" class="hidden">
+            <h3 class="section-title">Select a Team Sheet to Play</h3>
+            <div id="country-grid"></div>
+        </div>
+
+        <!-- Wrapped Main Dynamic Interlocking Gameplay Pane -->
+        <div id="game-board-area">
+            <div id="game-pane">
+                <header>
+                    <div class="header-top-bar">
+                        <div class="logo-container">
+                            <img src="title.png" alt="Ball Knowledge Logo" class="main-logo">
+                        </div>
+                    </div>
+                    
+                    <div id="difficulty-badge-container">
+                        <div class="progress-tracker-row">
+                            <div id="tag-easy" class="prog-tag stage-easy" onclick="inspectHistoricStage('easy')">EASY</div>
+                            <div id="tag-medium" class="prog-tag stage-medium" onclick="inspectHistoricStage('medium')">MEDIUM</div>
+                            <div id="tag-hard" class="prog-tag stage-hard" onclick="inspectHistoricStage('hard')">HARD</div>
+                        </div>
+                    </div>
+
+                    <div id="target-country-container">
+                        <div class="target-center-content">
+                            <h2 id="target-country-clue">Loading...</h2>
+                            <div id="minimal-status-bar">
+                                <span>Guesses Left: <strong id="guesses-left">5</strong></span>
+                                <span class="status-divider">•</span>
+                                <span>Max Value: <strong id="potential-score">0</strong> pts</span>
+                            </div>
+                        </div>
+                        <button id="info-trigger-btn" onclick="toggleInstructionsModal()" aria-label="How to play">
+                            <span class="info-icon-text">i</span>
+                        </button>
+                    </div>
+                </header>
+
+                <div class="grid-header">
+                    <div>Name</div>
+                    <div>Pos</div>
+                    <div>Club</div>
+                    <div>Age</div>
+                    <div>Hgt (cm)</div>
+                    <div>Caps</div>
                 </div>
-                <div class="pos-column">
-                    <div class="column-header">DF</div>
-                    <div id="roster-list-DF" class="column-list"></div>
-                </div>
-                <div class="pos-column">
-                    <div class="column-header">MF</div>
-                    <div id="roster-list-MF" class="column-list"></div>
-                </div>
-                <div class="pos-column">
-                    <div class="column-header">FW</div>
-                    <div id="roster-list-FW" class="column-list"></div>
+
+                <div id="guess-grid"></div>
+            </div>
+
+            <div id="roster-pane">
+                <h3 id="roster-title">Tap to guess!</h3>
+                <div class="roster-columns-wrapper">
+                    <div class="pos-column">
+                        <div class="column-header">GK</div>
+                        <div id="roster-list-GK" class="column-list"></div>
+                    </div>
+                    <div class="pos-column">
+                        <div class="column-header">DF</div>
+                        <div id="roster-list-DF" class="column-list"></div>
+                    </div>
+                    <div class="pos-column">
+                        <div class="column-header">MF</div>
+                        <div id="roster-list-MF" class="column-list"></div>
+                    </div>
+                    <div class="pos-column">
+                        <div class="column-header">FW</div>
+                        <div id="roster-list-FW" class="column-list"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -85,9 +101,7 @@
 
 <div id="instructions-modal" class="modal hidden">
     <div class="modal-content standard-overlay" style="max-width: 480px; text-align: left;">
-        
         <button onclick="toggleInstructionsModal()" aria-label="Close" style="position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 1.6rem; font-weight: bold; color: #4b5563; cursor: pointer; line-height: 1; padding: 0; transition: color 0.15s ease;">&times;</button>
-        
         <div class="help-fade-row help-delay-0">
             <h3 style="text-align: center; margin-top: 0;">🏆 How to Play</h3>
             <p>Complete 3 challenges everyday: <strong>Easy</strong>, <strong>Medium</strong>, and <strong>Hard</strong>. Click a player from the Team Sheet to guess!</p>
@@ -104,76 +118,30 @@
         </div>
 
         <div class="help-fade-row help-delay-1" style="display: grid; grid-template-columns: 2fr 1fr 2.5fr 1fr 1fr 1fr; gap: 4px; text-align: center; margin-bottom: 15px;">
-            <div>
-                <div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">Rabiot</div>
-            </div>
-            <div>
-                <div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">MF</div>
-                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Not MF</div>
-            </div>
-            <div>
-                <div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; line-height: 1.1;">AC Milan</div>
-                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Wrong club</div>
-            </div>
-            <div>
-                <div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; gap: 2px;">31 <span class="anim-arrow-down">↓</span></div>
-                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Not ±2</div>
-            </div>
-            <div>
-                <div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; gap: 2px;">191 <span class="anim-arrow-down">↓</span></div>
-                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Not ±5</div>
-            </div>
-            <div>
-                <div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; gap: 2px;">59 <span class="anim-arrow-up">↑</span></div>
-                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Not ±10</div>
-            </div>
+            <div><div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">Rabiot</div></div>
+            <div><div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">MF</div><div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Not MF</div></div>
+            <div><div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; line-height: 1.1;">AC Milan</div><div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Wrong club</div></div>
+            <div><div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; gap: 2px;">31 <span class="anim-arrow-down">↓</span></div><div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Not ±2</div></div>
+            <div><div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; gap: 2px;">191 <span class="anim-arrow-down">↓</span></div><div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Not ±5</div></div>
+            <div><div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; gap: 2px;">59 <span class="anim-arrow-up">↑</span></div><div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Not ±10</div></div>
         </div>
 
         <div class="help-fade-row help-delay-2" style="display: grid; grid-template-columns: 2fr 1fr 2.5fr 1fr 1fr 1fr; gap: 4px; text-align: center; margin-bottom: 15px;">
-            <div>
-                <div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">Koundé</div>
-            </div>
-            <div>
-                <div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">DF</div>
-                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Not DF</div>
-            </div>
-            <div>
-                <div class="tile partial" style="font-size: 0.7rem; min-height: 38px; padding: 2px; line-height: 1.1; display: flex; align-items: center; justify-content: center;">FC Barcelona</div>
-                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Same League</div>
-            </div>
-            <div>
-                <div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">27</div>
-                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Correct</div>
-            </div>
-            <div>
-                <div class="tile partial" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; gap: 2px;">178 <span class="anim-arrow-up">↑</span></div>
-                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">±5</div>
-            </div>
-            <div>
-                <div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; gap: 2px;">48 <span class="anim-arrow-up">↑</span></div>
-                <div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px;">Not ±10</div>
-            </div>
+            <div><div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">Koundé</div></div>
+            <div><div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">DF</div><div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Not DF</div></div>
+            <div><div class="tile partial" style="font-size: 0.7rem; min-height: 38px; padding: 2px; line-height: 1.1; display: flex; align-items: center; justify-content: center;">FC Barcelona</div><div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Same League</div></div>
+            <div><div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">27</div><div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">Correct</div></div>
+            <div><div class="tile partial" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; gap: 2px;">178 <span class="anim-arrow-up">↑</span></div><div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px; ">±5</div></div>
+            <div><div class="tile incorrect" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; gap: 2px;">48 <span class="anim-arrow-up">↑</span></div><div style="font-size: 0.6rem; color: #4b5563; margin-top: 4px;">Not ±10</div></div>
         </div>
 
         <div class="help-fade-row help-delay-3" style="display: grid; grid-template-columns: 2fr 1fr 2.5fr 1fr 1fr 1fr; gap: 4px; text-align: center; margin-bottom: 20px;">
-            <div>
-                <div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">Mbappé</div>
-            </div>
-            <div>
-                <div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">FW</div>
-            </div>
-            <div>
-                <div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; line-height: 1.1;">Real Madrid</div>
-            </div>
-            <div>
-                <div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">27</div>
-            </div>
-            <div>
-                <div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">180</div>
-            </div>
-            <div>
-                <div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">98</div>
-            </div>
+            <div><div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">Mbappé</div></div>
+            <div><div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">FW</div></div>
+            <div><div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center; line-height: 1.1;">Real Madrid</div></div>
+            <div><div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">27</div></div>
+            <div><div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">180</div></div>
+            <div><div class="tile correct" style="font-size: 0.75rem; min-height: 38px; padding: 2px; display: flex; align-items: center; justify-content: center;">98</div></div>
         </div>
 
         <div class="help-fade-row help-delay-4">
@@ -186,28 +154,34 @@
                 <button onclick="toggleInstructionsModal()" class="btn-primary" style="width: 100%;">Let's Play!</button>
             </div>
         </div>
+    </div>
+</div>
 
-    </div> <!-- Closes modal-content -->
-</div> <!-- Closes instructions-modal -->
-
-<!-- 1. NOW CLOSE THE MAIN SEPARATE LAYOUT GRID CONTAINER -->
 </div> <!-- Closes #layout-container -->
 
 <div id="toast-notification" class="toast hidden">Copied!</div>
 
-    <div id="victory-modal" class="modal hidden">
-        <div class="modal-content">
-            <h2 id="modal-title">🏁 Game Over 🏁</h2>
-            <p id="victory-text"></p>
-            <div class="modal-buttons" id="modal-actions-container"></div>
+<div id="victory-modal" class="modal hidden">
+    <div class="modal-content">
+        <h2 id="modal-title">🏁 Game Over 🏁</h2>
+        <p id="victory-text"></p>
+        <div class="modal-buttons" id="modal-actions-container"></div>
+    </div>
+</div>
+
+<div id="freeplay-modal" class="modal hidden">
+    <div class="modal-content" style="background: white; padding: 20px; border-radius: 8px; text-align: center; position: relative; max-width: 400px; margin: 10% auto; box-shadow: 0 4px 15px rgba(0,0,0,0.3);">
+        <h2 id="freeplay-modal-title" style="margin-top: 0;">🏆 Congratulations!</h2>
+        <p id="freeplay-modal-text" style="font-size: 1rem; color: #334155; margin-bottom: 20px;"></p>
+        <div class="modal-buttons" style="display: flex; flex-direction: column; gap: 10px;">
+            <button onclick="replayCurrentFreePlayTeamFromModal()" class="btn-primary" style="background:#407a44; color:white; padding:11px; font-size:0.95rem; border:none; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">🔄 Play Same Team Again</button>
+            <button onclick="exitFreePlayToGridFromModal()" class="btn-secondary" style="background:#e6eee6; color:#1b3322; border:1px solid #a3c6a3; padding:11px; font-size:0.95rem; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">🌍 Select New Team</button>
         </div>
     </div>
+</div>
 
-
-<!-- 2. LINK YOUR LOGIC ENGINE -->
 <script src="app.js"></script>
 
-<!-- 3. FOOTER BREAKS OUT OF EVERY GRID RULES USING ABSOLUTE CLEARING -->
 <footer style="display: block; position: relative; width: 100%; max-width: 600px; margin: 60px auto 30px auto; text-align: center; font-size: 0.8rem; color: #64748b; border-top: 1px dashed #cbd5e1; padding-top: 15px; box-sizing: border-box;">
     <p style="margin: 0 0 6px 0;">© 2026 Ball Knowledge. All rights reserved.</p>
     <p style="margin: 0;">Found a bug or missing player? Contact: <a href="mailto:ballknowledgeguessinggame@gmail.com" style="color: #2d5a27; font-weight: bold; text-decoration: none;">ballknowledgeguessinggame@gmail.com</a></p>

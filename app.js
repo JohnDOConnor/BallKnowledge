@@ -1,11 +1,13 @@
 // --- GLOBAL CORE ENGINE VARIABLES ---
 let playersDatabase = [];
 let dailyTargets = { easy: null, medium: null, hard: null };
+let freePlayTarget = null; // Holds the active target when in free play mode
+let currentGameMode = "daily"; // 'daily' or 'free'
 let currentDifficultyStage = "easy"; 
 let gameOverCrownComplete = false;
 
-let isProcessingStageTransition = false; // Freezes clicking during win/loss delay screens
-let guessedPlayerNamesThisStage = [];   // Visually greys out already picked players
+let isProcessingStageTransition = false; 
+let guessedPlayerNamesThisStage = [];   
 
 let nationalRoster = []; 
 let guessesRemaining = 5;
@@ -17,7 +19,10 @@ let aggregatedMatrices = { easy: [], medium: [], hard: [] };
 let aggregatedGuessesUsed = { easy: 0, medium: 0, hard: 0 };
 
 let runtimeHtmlRowsRecord = { easy: [], medium: [], hard: [] };
-let countdownInterval = null;            // Manages the midnight countdown safely
+let freePlayRowsRecord = []; // Tracks rows specifically for free play mode
+let countdownInterval = null;            
+
+let freePlayGuessesCount = 0; // Tracks structural rows rendered to the grid container
 
 const positionOrder = ["GK", "DF", "MF", "FW"];
 
@@ -34,7 +39,7 @@ const countryToFlagMap = {
     "Iraq": "🇮🇶", "Japan": "🇯🇵", "Qatar": "🇶🇦", "Saudi Arabia": "🇸🇦", "Korea Republic": "🇰🇷",
     "Uzbekistan": "🇺🇿", "New Zealand": "🇳🇿", "Norway": "🇳🇴", "Türkiye": "🇹🇷", "Curaçao": "🇨🇼",
     "Congo DR": "🇨🇩", "Czechia": "🇨🇿", "Bosnia And Herzegovina": "🇧🇦", "Haiti": "🇭🇹",
-    "Jordan": "🇯🇴", "Sweden": "🇸🇪", "USA": "🇺🇸", "Cabo Verde": "🇨🇻"
+    "Jordan": "🇯🇴", "Sweden": "🇸🇪", "USA": "🇺🇸", "Cabo Verde": "🇨🇻", "Cote d'Ivoire": "🇨🇮"
 };
 
 function getNationalFlag(countryName) {
@@ -63,6 +68,7 @@ fetch('world_cup_players.json')
     .then(data => {
         playersDatabase = data;
         generateDailyTargets();
+        populateCountrySelectGrid();
         
         const lastPlayedDate = localStorage.getItem('lastPlayedDate');
         const today = getTodayDateString();
@@ -93,28 +99,155 @@ function generateDailyTargets() {
     const today = new Date();
     const dateStamp = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}`;
     
-    const easyPool = playersDatabase.filter(p => p.difficulty === "easy");
-    const medPool = playersDatabase.filter(p => p.difficulty === "medium");
-    const hardPool = playersDatabase.filter(p => p.difficulty === "hard");
+    let easyPool = playersDatabase.filter(p => p.difficulty === "easy");
+    let medPool = playersDatabase.filter(p => p.difficulty === "medium");
+    let hardPool = playersDatabase.filter(p => p.difficulty === "hard");
 
-    dailyTargets.easy = easyPool[getDailySeededIndex(dateStamp + "-EASY", easyPool.length)] || playersDatabase[0];
-    dailyTargets.medium = medPool[getDailySeededIndex(dateStamp + "-MED", medPool.length)] || playersDatabase[0];
-    dailyTargets.hard = hardPool[getDailySeededIndex(dateStamp + "-HARD", hardPool.length)] || playersDatabase[0];
+    // Seed and pick Easy target
+    let easyTarget = easyPool[getDailySeededIndex(dateStamp + "-EASY", easyPool.length)] || playersDatabase[0];
+    dailyTargets.easy = easyTarget;
+
+    // Filter out Easy team from Medium pool to prevent duplicate teams
+    let filteredMedPool = medPool.filter(p => p.national_team !== easyTarget.national_team);
+    if (filteredMedPool.length === 0) filteredMedPool = medPool; // Fallback safety
+    let mediumTarget = filteredMedPool[getDailySeededIndex(dateStamp + "-MED", filteredMedPool.length)] || playersDatabase[0];
+    dailyTargets.medium = mediumTarget;
+
+    // Filter out Easy and Medium teams from Hard pool
+    let filteredHardPool = hardPool.filter(p => p.national_team !== easyTarget.national_team && p.national_team !== mediumTarget.national_team);
+    if (filteredHardPool.length === 0) filteredHardPool = hardPool; // Fallback safety
+    dailyTargets.hard = filteredHardPool[getDailySeededIndex(dateStamp + "-HARD", filteredHardPool.length)] || playersDatabase[0];
+}
+
+function switchGameMode(mode) {
+    // UI Visual Toggle for Buttons
+    const dailyBtn = document.getElementById('btn-mode-daily');
+    const freeBtn = document.getElementById('btn-mode-free');
+    if (dailyBtn) dailyBtn.classList.toggle('active-mode', mode === 'daily');
+    if (freeBtn) freeBtn.classList.toggle('active-mode', mode === 'free');
+    
+    currentGameMode = mode;
+    
+    if (mode === 'daily') {
+        document.getElementById('difficulty-badge-container').classList.remove('hidden');
+        document.getElementById('country-select-screen').classList.add('hidden');
+        document.getElementById('game-board-area').classList.remove('hidden');
+        
+        const lastPlayedDate = localStorage.getItem('lastPlayedDate');
+        if (lastPlayedDate === getTodayDateString()) {
+            gameOverCrownComplete = true;
+            endTripleCrownGame();
+        } else {
+            loadCurrentProgressOrStart();
+        }
+    } else {
+        // FIX: Forcefully toggle display screen containers so the grid comes back into view
+        document.getElementById('difficulty-badge-container').classList.add('hidden');
+        document.getElementById('game-board-area').classList.add('hidden');
+        document.getElementById('country-select-screen').classList.remove('hidden');
+        
+        // Regenerate the grid cleanly to ensure all 48 teams are click-ready
+        populateCountrySelectGrid();
+    }
+}
+
+function showFreePlayResolutionModal(isWin, targetName) {
+    const currentCountry = freePlayTarget ? freePlayTarget.national_team : "";
+
+    document.getElementById('modal-title').textContent = isWin ? "🏆 Congratulations!" : "Game Over";
+    document.getElementById('victory-text').innerHTML = isWin 
+        ? `🎉 Great job! You successfully found <strong>${targetName}</strong> for ${currentCountry}!` 
+        : `❌ Out of guesses! The hidden target player was <strong>${targetName}</strong>.`;
+    
+    const actionsWrapper = document.getElementById('modal-actions-container');
+    
+    // Explicitly call switchGameMode('free') and hide the window overlay block right away
+    actionsWrapper.innerHTML = `
+        <button onclick="replayCurrentFreePlayTeam('${currentCountry}')" class="btn-primary" style="background:#407a44; color:white; padding:11px; font-size:0.95rem; border:none; border-radius:5px; font-weight:bold; cursor:pointer; width:100%; margin-bottom: 8px;">🔄 Play Same Team Again</button>
+        <button onclick="switchGameMode('free'); document.getElementById('victory-modal').classList.add('hidden');" class="btn-secondary" style="background:#e6eee6; color:#1b3322; border:1px solid #a3c6a3; padding:11px; font-size:0.95rem; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">🌍 Select New Team</button>
+    `;
+    
+    document.getElementById('victory-modal').classList.remove('hidden');
+}
+
+function populateCountrySelectGrid() {
+    const gridContainer = document.getElementById('country-grid');
+    gridContainer.innerHTML = '';
+    
+    // Gather unique countries present in your loaded JSON structure
+    const uniqueCountries = [...new Set(playersDatabase.map(p => p.national_team))].sort();
+    
+    uniqueCountries.forEach(country => {
+        const flag = getNationalFlag(country);
+        const card = document.createElement('div');
+        card.className = 'country-card';
+        card.innerHTML = `
+            <div class="country-card-flag">${flag}</div>
+            <div class="country-card-name">${country}</div>
+        `;
+        card.addEventListener('click', () => startFreePlayCountry(country));
+        gridContainer.appendChild(card);
+    });
+}
+
+function startFreePlayCountry(countryName) {
+    document.getElementById('country-select-screen').classList.add('hidden');
+    document.getElementById('game-board-area').classList.remove('hidden');
+    
+    const countryPool = playersDatabase.filter(p => p.national_team === countryName);
+    freePlayTarget = countryPool[Math.floor(Math.random() * countryPool.length)];
+    
+    isProcessingStageTransition = false;
+    guessedPlayerNamesThisStage = [];
+    freePlayRowsRecord = [];
+    freePlayGuessesCount = 0; // Reset row element counter completely
+    guessesRemaining = totalGuessesAllowed;
+    
+    const grid = document.getElementById('guess-grid');
+    grid.innerHTML = '';
+    
+    document.getElementById('target-country-clue').innerHTML = `
+        <span>${freePlayTarget.national_team} (Free Play)</span> 
+        <span class="flag-emoji">${getNationalFlag(freePlayTarget.national_team)}</span>
+    `;
+    
+    nationalRoster = countryPool;
+    
+    // Explicitly generate 6 structural slot identifiers (0 for initial hint, 1-5 for player guesses)
+    for (let i = 0; i < 6; i++) {
+        const placeholder = document.createElement('div');
+        placeholder.className = 'guess-row placeholder-row';
+        placeholder.id = `row-slot-${i}`;
+        
+        for (let t = 0; t < 6; t++) {
+            const emptyTile = document.createElement('div');
+            emptyTile.className = 'tile';
+            emptyTile.innerHTML = '&nbsp;';
+            placeholder.appendChild(emptyTile);
+        }
+        grid.appendChild(placeholder);
+    }
+    
+    renderRosterSidebar();
+    
+    document.getElementById('guesses-left').textContent = guessesRemaining;
+    const scoreEl = document.getElementById('potential-score');
+    if (scoreEl) scoreEl.textContent = "---";
+
+    setTimeout(() => {
+        triggerInitialWrongGuess();
+    }, 500);
 }
 
 function toggleInstructionsModal() {
     const infoModal = document.getElementById('instructions-modal');
     const animatedElements = infoModal.querySelectorAll('.help-fade-row');
-    
-    // Toggle the hidden wrapper class
     const isNowOpening = infoModal.classList.contains('hidden');
     infoModal.classList.toggle('hidden');
     
     if (isNowOpening) {
-        // Force the animation cycle to start completely clean from zero
         animatedElements.forEach(el => {
             el.style.animation = 'none';
-            // Trigger a reflow to flush styling state registers
             el.offsetHeight; 
             el.style.animation = '';
         });
@@ -136,6 +269,8 @@ function synchronizeTrackerVisualStates() {
 }
 
 function loadCurrentProgressOrStart() {
+    if (currentGameMode === 'free') return;
+    
     isProcessingStageTransition = false; 
     guessedPlayerNamesThisStage = [];
 
@@ -162,6 +297,10 @@ function loadCurrentProgressOrStart() {
     
     nationalRoster = playersDatabase.filter(p => p.national_team === targetPlayer.national_team);
     
+    // FIX: Clear any previously generated daily HTML rows row record caches if we are starting a fresh daily session view context
+    runtimeHtmlRowsRecord[currentDifficultyStage] = [];
+
+    // Initialize clean grid rows
     for (let i = 0; i < 6; i++) {
         const placeholder = document.createElement('div');
         placeholder.className = 'guess-row placeholder-row';
@@ -179,13 +318,14 @@ function loadCurrentProgressOrStart() {
     renderRosterSidebar();
     updateStatusUI();
     
+    // Triggers the initial hint guess smoothly on row index 0
     setTimeout(() => {
         triggerInitialWrongGuess();
-    }, 500); // 0.5s initialization delay
+    }, 500);
 }
 
 function inspectHistoricStage(selectedStage) {
-    if (!gameOverCrownComplete) return;
+    if (!gameOverCrownComplete || currentGameMode === 'free') return;
     currentDifficultyStage = selectedStage;
     synchronizeTrackerVisualStates();
     
@@ -229,7 +369,8 @@ function renderRosterSidebar() {
         if (container) container.innerHTML = '';
     });
 
-    if (gameOverCrownComplete) return;
+    // MODIFIED: Only lock out selection on game complete if the user is in Daily Challenge mode
+    if (gameOverCrownComplete && currentGameMode === 'daily') return;
 
     const sortedRoster = [...nationalRoster].sort((a, b) => a.name.localeCompare(b.name));
 
@@ -247,8 +388,12 @@ function renderRosterSidebar() {
         }
 
         item.addEventListener('click', function handlesRosterClick() {
-            if (guessesRemaining <= 0 || gameOverCrownComplete || isProcessingStageTransition) return;
+            if (guessesRemaining <= 0 || isProcessingStageTransition) return;
+            
+            // MODIFIED: Explicitly allow clicks in free play even if the daily crown is completed
+            if (currentGameMode === 'daily' && gameOverCrownComplete) return;
             if (guessedPlayerNamesThisStage.includes(player.name.toUpperCase())) return;
+            
             evaluateCustomGuess(player, true);
         });
 
@@ -257,7 +402,9 @@ function renderRosterSidebar() {
 }
 
 function triggerInitialWrongGuess() {
-    let targetPlayer = dailyTargets[currentDifficultyStage];
+    // REMOVED: "if (currentGameMode === 'free') return;" to allow initial guesses in Free Play
+    let targetPlayer = (currentGameMode === 'daily') ? dailyTargets[currentDifficultyStage] : freePlayTarget;
+    if (!targetPlayer) return;
     
     const deterministicWrongOptions = nationalRoster
         .filter(p => p.name.toUpperCase() !== targetPlayer.name.toUpperCase())
@@ -265,23 +412,21 @@ function triggerInitialWrongGuess() {
 
     if (deterministicWrongOptions.length > 0) {
         const today = new Date();
-        const firstRowSeedString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}-${currentDifficultyStage}-FIRST_LINE_HINT`;
+        // Fallback or unique seed modifier depending on mode
+        const seedModifier = currentGameMode === 'daily' ? currentDifficultyStage : targetPlayer.national_team;
+        const firstRowSeedString = `${today.getFullYear()}-${today.getMonth() + 1}-${today.getDate()}-${seedModifier}-FIRST_LINE_HINT`;
         
         const targetStaticIndex = getDailySeededIndex(firstRowSeedString, deterministicWrongOptions.length);
         const dailyIdenticalWrongPlayer = deterministicWrongOptions[targetStaticIndex];
         
-        // 1. Lock the player down
         guessedPlayerNamesThisStage.push(dailyIdenticalWrongPlayer.name.toUpperCase());
-        
-        // 2. FORCE the sidebar to refresh immediately so they turn grey instantly
         renderRosterSidebar();
-        
-        // 3. Drop them onto the board matrix
         evaluateCustomGuess(dailyIdenticalWrongPlayer, false); 
     }
 }
 
 function updateStatusUI() {
+    if (currentGameMode === 'free') return;
     document.getElementById('guesses-left').textContent = guessesRemaining;
     let currentPotential = baseDifficultyPoints * (guessesRemaining / totalGuessesAllowed);
     document.getElementById('potential-score').textContent = Math.round(currentPotential);
@@ -289,7 +434,7 @@ function updateStatusUI() {
 
 // --- EVALUATE MATRIX CORE ENGINE ---
 function evaluateCustomGuess(guess, countAsActiveGuess = true) {
-    let targetPlayer = dailyTargets[currentDifficultyStage];
+    let targetPlayer = (currentGameMode === 'daily') ? dailyTargets[currentDifficultyStage] : freePlayTarget;
     const row = document.createElement('div');
     row.className = 'guess-row';
 
@@ -386,7 +531,7 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
     }
     row.appendChild(capsTile);
 
-    const currentActiveIndex = runtimeHtmlRowsRecord[currentDifficultyStage].length;
+    const currentActiveIndex = (currentGameMode === 'daily') ? runtimeHtmlRowsRecord[currentDifficultyStage].length : freePlayGuessesCount;
     const targetSlot = document.getElementById(`row-slot-${currentActiveIndex}`);
     
     if (targetSlot) {
@@ -395,33 +540,61 @@ function evaluateCustomGuess(guess, countAsActiveGuess = true) {
         document.getElementById('guess-grid').appendChild(row);
     }
 
-    runtimeHtmlRowsRecord[currentDifficultyStage].push(row.cloneNode(true));
+    if (currentGameMode === 'daily') {
+        runtimeHtmlRowsRecord[currentDifficultyStage].push(row.cloneNode(true));
+    } else {
+        freePlayRowsRecord.push(row.cloneNode(true));
+        freePlayGuessesCount++;
+    }
 
     if (!countAsActiveGuess) return;
 
-    // Track active choice values
     guessedPlayerNamesThisStage.push(guess.name.toUpperCase());
     renderRosterSidebar();
 
-    aggregatedMatrices[currentDifficultyStage].push(rowEmojis.join(''));
+    if (currentGameMode === 'daily') {
+        aggregatedMatrices[currentDifficultyStage].push(rowEmojis.join(''));
+    }
 
+    // --- WIN RESOLUTION ---
     if (isNameCorrect) {
         isProcessingStageTransition = true; 
-        let currentScore = Math.round(baseDifficultyPoints * (guessesRemaining / totalGuessesAllowed));
-        aggregatedScores[currentDifficultyStage] = currentScore;
-        aggregatedGuessesUsed[currentDifficultyStage] = totalGuessesAllowed - guessesRemaining + 1;
-        processStageResolution(true);
+        if (currentGameMode === 'daily') {
+            let currentScore = Math.round(baseDifficultyPoints * (guessesRemaining / totalGuessesAllowed));
+            aggregatedScores[currentDifficultyStage] = currentScore;
+            aggregatedGuessesUsed[currentDifficultyStage] = totalGuessesAllowed - guessesRemaining + 1;
+            processStageResolution(true);
+        } else {
+            // FIX: Run an isolated timeout that only opens your free play modal
+            setTimeout(() => {
+                showFreePlayResolutionModal(true, targetPlayer.name);
+            }, 600);
+        }
         return;
     }
 
     guessesRemaining--;
-    updateStatusUI();
+    
+    const guessesLeftEl = document.getElementById('guesses-left');
+    if (guessesLeftEl) guessesLeftEl.textContent = guessesRemaining;
 
+    if (currentGameMode === 'daily') {
+        updateStatusUI();
+    }
+
+    // --- LOSS RESOLUTION ---
     if (guessesRemaining === 0) {
         isProcessingStageTransition = true; 
-        aggregatedScores[currentDifficultyStage] = 0;
-        aggregatedGuessesUsed[currentDifficultyStage] = totalGuessesAllowed;
-        processStageResolution(false);
+        if (currentGameMode === 'daily') {
+            aggregatedScores[currentDifficultyStage] = 0;
+            aggregatedGuessesUsed[currentDifficultyStage] = totalGuessesAllowed;
+            processStageResolution(false);
+        } else {
+            // FIX: Run an isolated timeout that only opens your free play modal
+            setTimeout(() => {
+                showFreePlayResolutionModal(false, targetPlayer.name);
+            }, 600);
+        }
     }
 }
 
@@ -456,6 +629,46 @@ function showIntermediateModal(message, transitionButtonText) {
     `;
 
     document.getElementById('victory-modal').classList.remove('hidden');
+}
+
+function showFreePlayResolutionModal(isWin, targetName) {
+    const currentCountry = freePlayTarget ? freePlayTarget.national_team : "";
+
+    document.getElementById('freeplay-modal-title').textContent = isWin ? "🏆 Congratulations!" : "Game Over";
+    document.getElementById('freeplay-modal-text').innerHTML = isWin 
+        ? `🎉 Great job! You successfully found <strong>${targetName}</strong> for ${currentCountry}!` 
+        : `❌ Out of guesses! The hidden target player was <strong>${targetName}</strong>.`;
+    
+    const actionsWrapper = document.querySelector('#freeplay-modal .modal-buttons');
+    
+    // Injects all 3 dynamic options cleanly structured
+    actionsWrapper.innerHTML = `
+        <button onclick="replayCurrentFreePlayTeamFromModal()" class="btn-primary" style="background:#407a44; color:white; padding:11px; font-size:0.95rem; border:none; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">🔄 Play Same Team Again</button>
+        <button onclick="exitFreePlayToGridFromModal()" class="btn-secondary" style="background:#e6eee6; color:#1b3322; border:1px solid #a3c6a3; padding:11px; font-size:0.95rem; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">🌍 Select New Team</button>
+        <button onclick="switchFromModalToDailyChallenge()" class="btn-secondary" style="background:#2d5a27; color:white; border:none; padding:11px; font-size:0.95rem; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">📅 Back to Daily Challenge</button>
+    `;
+    
+    document.getElementById('freeplay-modal').classList.remove('hidden');
+}
+
+// Added structural action helper wrapper to route the player seamlessly out of free play
+function switchFromModalToDailyChallenge() {
+    document.getElementById('freeplay-modal').classList.add('hidden');
+    switchGameMode('daily');
+}
+
+// Redirect execution to instantly clear the custom popup and refresh the current team squad sheet
+function replayCurrentFreePlayTeamFromModal() {
+    document.getElementById('freeplay-modal').classList.add('hidden');
+    if (freePlayTarget && freePlayTarget.national_team) {
+        startFreePlayCountry(freePlayTarget.national_team);
+    }
+}
+
+// Redirect execution to safely switch back to the main grid choice menu
+function exitFreePlayToGridFromModal() {
+    document.getElementById('freeplay-modal').classList.add('hidden');
+    switchGameMode('free');
 }
 
 function executeModalAdvance() {
@@ -531,39 +744,30 @@ function endTripleCrownGame() {
         modalContent.style.paddingTop = '30px';
 
         modalContent.innerHTML = `
-            <!-- Made the Close Button Smaller (1.15rem) -->
             <button onclick="closeModal()" aria-label="Close" style="position: absolute; top: 12px; right: 16px; background: none; border: none; font-size: 1.15rem; font-weight: bold; color: #4b5563; cursor: pointer; line-height: 1; padding: 0;">&times;</button>
 
             <h2 id="modal-title" style="margin-top: 0; margin-bottom: 2px; text-align: center; font-size: 1.4rem;">Ball Knowledge</h2>
             <div style="font-size: 0.78rem; color: #6b7280; margin-bottom: 18px; text-align: center; font-weight: 500;">${formattedDisplayDate}</div>
             
-            <!-- Narrowed container wrapper (195px max width) to pull information columns tight together -->
             <div style="display: grid; grid-template-columns: auto 1fr auto; gap: 6px 10px; max-width: 195px; margin: 0 auto 20px auto; font-size: 1rem; line-height: 1.4; align-items: center; color: #1e293b;">
-                
-                <!-- Easy Row -->
                 <div style="font-size: 1.1rem; text-align: left; width: 20px;">${easyFlag}</div>
                 <div style="text-align: left; color: #475569;">Easy:</div>
                 <div style="text-align: right; font-weight: bold;">${aggregatedScores.easy} <span style="font-size: 0.8rem; font-weight: normal; color: #64748b;">pts</span></div>
                 
-                <!-- Medium Row -->
                 <div style="font-size: 1.1rem; text-align: left; width: 20px;">${medFlag}</div>
                 <div style="text-align: left; color: #475569;">Medium:</div>
                 <div style="text-align: right; font-weight: bold;">${aggregatedScores.medium} <span style="font-size: 0.8rem; font-weight: normal; color: #64748b;">pts</span></div>
                 
-                <!-- Hard Row -->
                 <div style="font-size: 1.1rem; text-align: left; width: 20px;">${hardFlag}</div>
                 <div style="text-align: left; color: #475569;">Hard:</div>
                 <div style="text-align: right; font-weight: bold;">${aggregatedScores.hard} <span style="font-size: 0.8rem; font-weight: normal; color: #64748b;">pts</span></div>
                 
-                <!-- Spacer Divider -->
                 <div style="grid-column: span 3; border-top: 1px dashed #cbd5e1; margin: 2px 0;"></div>
                 
-                <!-- Renamed to Total -->
                 <div style="font-size: 1.05rem; text-align: left; width: 20px;">🥇</div>
                 <div style="text-align: left; font-weight: bold;">Total:</div>
                 <div style="text-align: right; font-weight: bold;">${grandTotalScore} <span style="font-size: 0.8rem; font-weight: normal; color: #64748b;">pts</span></div>
 
-                <!-- Streak Row (Kept default theme text-color block) -->
                 <div style="font-size: 1.05rem; text-align: left; width: 20px;">🔥</div>
                 <div style="text-align: left; font-weight: bold;">Streak:</div>
                 <div style="text-align: right; font-weight: bold;">${currentStreak} days</div>
@@ -571,6 +775,9 @@ function endTripleCrownGame() {
 
             <div id="modal-actions-container" class="modal-buttons" style="display: flex; flex-direction: column; gap: 10px;">
                 <button onclick="shareResults()" class="btn-share" style="background:#2d5a27; color:white; padding:11px; font-size:0.95rem; border:none; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">📊 Share Results</button>
+                
+                <!-- NEW: Standalone jump shortcut option styled using the matching off-white secondary tab profile -->
+                <button onclick="switchFromDailyModalToFreePlay()" class="btn-secondary" style="background:#ffffff; color:#1b3322; border:2px solid #cbd5e1; padding:11px; font-size:0.95rem; border-radius:5px; font-weight:bold; cursor:pointer; width:100%;">🌍 Go to Free Play Mode</button>
                 
                 <div id="game-countdown-wrapper" style="padding: 6px 10px; background: rgba(0,0,0,0.05); border-radius: 5px; font-size: 0.8rem; text-align: center; color: #4b5563;">
                     Next puzzle in: <strong id="next-puzzle-timer" style="color:#2d5a27; font-family:monospace; font-size:0.9rem;">00:00:00</strong>
@@ -583,6 +790,12 @@ function endTripleCrownGame() {
 
     updateCountdownDisplay();
     countdownInterval = setInterval(updateCountdownDisplay, 1000);
+}
+
+// Simple direct interface router to seamlessly clear daily windows and unpack the country picker grid
+function switchFromDailyModalToFreePlay() {
+    document.getElementById('victory-modal').classList.add('hidden');
+    switchGameMode('free');
 }
 
 function updateCountdownDisplay() {
@@ -622,13 +835,11 @@ function shareResults() {
     const dateOptions = { day: 'numeric', month: 'long', year: 'numeric' };
     const formattedDisplayDate = new Date().toLocaleDateString('en-GB', dateOptions);
 
-    // Format individual points to match layout spacing structures seamlessly
     const ptsEasy = `${aggregatedScores.easy} pts`;
     const ptsMed  = `${aggregatedScores.medium} pts`;
     const ptsHard = `${aggregatedScores.hard} pts`;
     const ptsTot  = `${grandTotalScore} pts`;
 
-    // Builds a completely linear monospaced layout grid table
     let shareText = `Ball Knowledge Daily Complete!\n${formattedDisplayDate}\n\n\`\`\`\n`;
     shareText += `${easyFlag} Easy:   ${ptsEasy.padStart(8)}\n`;
     shareText += `${medFlag} Medium: ${ptsMed.padStart(8)}\n`;

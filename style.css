@@ -464,3 +464,133 @@ header h2 .flag-emoji {
         transform: translateY(0);
     }
 }
+
+/* --- Mode Toggle Header Controls --- */
+#mode-switcher-container {
+    display: flex;
+    gap: 10px;
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+.mode-toggle-btn {
+    flex: 1;
+    padding: 10px;
+    font-weight: 700;
+    font-size: 0.9rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: center;
+    
+    /* Removes native operating system/browser engine default shading completely */
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+}
+
+/* --- DAILY CHALLENGE BUTTON STATES --- */
+
+/* Default / Inactive State: Greyed out when not selected */
+#btn-mode-daily {
+    background-color: #708475 !important;    /* Desaturated grey-green */
+    background-image: none !important;
+    color: #cbd5e1 !important;               /* Muted grey-white text */
+    border: none !important;                 /* Removes all borders */
+    box-shadow: none !important;
+    opacity: 0.65;                           /* Makes it look greyed out */
+}
+
+/* Active State: Deep solid forest green with an informative drop shadow */
+#btn-mode-daily.active-mode {
+    background-color: #1b3322 !important;    /* Exact very dark forest green */
+    color: #ffffff !important;               /* Sharp solid white text */
+    border: none !important;
+    opacity: 1;                              /* Full brightness */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.25), 
+                0 2px 4px -1px rgba(0, 0, 0, 0.15) !important; /* Prominent clean shadow */
+}
+
+
+/* --- FREE PLAY BUTTON STATES --- */
+
+/* Default / Inactive State: Greyed out when not selected */
+#btn-mode-free {
+    background-color: #e2e8f0 !important;    /* Grey-tinted off-white background */
+    background-image: none !important;
+    color: #94a3b8 !important;               /* Dull slate text */
+    border: none !important;                 /* Removes all grey borders */
+    box-shadow: none !important;
+    opacity: 0.65;                           /* Makes it look greyed out */
+}
+
+/* Active State: Clean off-white tab with a prominent matching drop shadow */
+#btn-mode-free.active-mode {
+    background-color: #ffffff !important;    /* Solid pure white */
+    color: #1b3322 !important;               /* Dark readable green text */
+    border: none !important;
+    opacity: 1;                              /* Full brightness */
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.15), 
+                0 2px 4px -1px rgba(0, 0, 0, 0.10) !important; /* Elegant clean shadow */
+}
+
+
+/* --- Free Play Selection Grid System --- */
+#country-select-screen {
+    width: 100%;
+    background-color: #ffffff;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+    box-sizing: border-box;
+}
+
+.section-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    text-align: center;
+    font-size: 1.2rem;
+    color: #1b3322;
+}
+
+#country-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+}
+
+.country-card {
+    background-color: #fdfbf7;
+    border: 2px solid #cbd5e1;
+    border-radius: 6px;
+    padding: 12px;
+    text-align: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    transition: transform 0.15s ease, border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.country-card:hover {
+    transform: translateY(-2px);
+    border-color: #2d5a27;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.country-card-flag {
+    font-size: 2rem;
+    margin-bottom: 6px;
+}
+
+.country-card-name {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1e293b;
+}
+
+/* Structural Split Handle Utility wrapper */
+#game-board-area {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    width: 100%;
+}
